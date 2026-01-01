@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Lingo-Sasambo V2",
+  "description": "A gamified language guardian RPG for Sasak, Samawa, and Mbojo languages featuring a modern liquid-glass aesthetic.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

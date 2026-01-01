@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Gamepad2, BookOpen, Trophy, User } from 'lucide-react';
+import { Home, Gamepad2, Trophy, User } from 'lucide-react';
 import { ScreenState } from '../types';
 import { motion } from 'framer-motion';
 
@@ -28,11 +28,12 @@ const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigate }) =>
   ];
 
   return (
-    <div className="absolute bottom-4 left-0 w-full p-4 z-50">
+    // Moved up to bottom-6 and added bottom-safe class from index.html style
+    <div className="absolute bottom-6 bottom-safe left-0 w-full px-6 z-50 pointer-events-none">
       <motion.div 
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-full px-6 py-4 flex justify-between items-center shadow-2xl max-w-[340px] mx-auto"
+        className="bg-[#1a0f0a]/80 backdrop-blur-xl border border-white/10 rounded-3xl px-6 py-4 flex justify-between items-center shadow-2xl max-w-[340px] mx-auto pointer-events-auto"
       >
         {items.map((item) => {
           const isActive = currentScreen === item.id;
@@ -40,16 +41,16 @@ const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigate }) =>
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center gap-1 transition-colors duration-300 relative ${isActive ? 'text-white' : 'text-white/50'}`}
+              className={`flex flex-col items-center gap-1.5 transition-colors duration-300 relative ${isActive ? 'text-white' : 'text-white/40'}`}
             >
               {isActive && (
                 <motion.div 
                   layoutId="nav-glow"
-                  className="absolute -top-10 w-12 h-12 bg-sasambo-red blur-xl opacity-50 rounded-full"
+                  className="absolute -top-10 w-10 h-10 bg-sasambo-accent blur-xl opacity-40 rounded-full"
                 />
               )}
-              <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[9px] font-bold tracking-wide">{item.label}</span>
             </button>
           );
         })}

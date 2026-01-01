@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Lingo-Sasambo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -51,6 +51,16 @@
       ::-webkit-scrollbar {
         width: 0px;
         background: transparent;
+      }
+      /* Safe area utilities */
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+      }
+      .mb-safe {
+        margin-bottom: env(safe-area-inset-bottom, 20px);
+      }
+      .bottom-safe {
+        bottom: env(safe-area-inset-bottom, 20px);
       }
     </style>
 <script type="importmap">

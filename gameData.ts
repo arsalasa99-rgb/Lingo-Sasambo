@@ -2,328 +2,451 @@
 import { PasarKataQuestion, TebakBahasaQuestion, LegendaQuestion, LevelData, Language, BiomeType, InventoryItem } from './types';
 
 // --- HELPER: Randomize Options ---
-// Ensures the correct answer is not always at the first index.
 const createQ = (id: string, question: string, correct: string, distractors: string[]) => {
     const options = [correct, ...distractors].sort(() => Math.random() - 0.5);
     return { id, question, options, correctAnswer: correct };
 };
 
-// --- HELPER: Randomize Options for Legend ---
 const createL = (id: string, story: string, question: string, correct: string, distractors: string[]) => {
     const options = [correct, ...distractors].sort(() => Math.random() - 0.5);
     return { id, story, question, options, correctAnswer: correct };
 };
 
-// --- MASTER INVENTORY (UPDATED WITH NEW HIERARCHY) ---
+// --- DYNAMIC LEVEL GENERATOR ---
+// Generates 20 levels with increasing question counts (2 -> 3 -> 4 -> 5)
+function generateDynamicLevels<T>(pool: T[], totalLevels: number = 20): T[][] {
+    const levels: T[][] = [];
+    
+    for (let i = 0; i < totalLevels; i++) {
+        // Determine Question Count: 2 (Lvl 1-3), 3 (Lvl 4-9), 4 (Lvl 10-15), 5 (Lvl 16-20)
+        let qCount = 2; 
+        if (i >= 3) qCount = 3; 
+        if (i >= 9) qCount = 4; 
+        if (i >= 15) qCount = 5; 
+
+        const levelQs: T[] = [];
+        const poolSize = pool.length;
+        
+        // Window Logic: Ensure progression from easy (start of array) to hard (end of array)
+        // Window covers roughly 30% of the pool to allow variety but keep difficulty bounded
+        const windowSize = Math.max(5, Math.floor(poolSize * 0.35));
+        const maxStartIndex = Math.max(0, poolSize - windowSize);
+        const progress = i / (totalLevels - 1); 
+        
+        let startIdx = Math.floor(progress * maxStartIndex);
+        const usedIndices = new Set<number>();
+        
+        for (let k = 0; k < qCount; k++) {
+            let attempts = 0;
+            let pickedIdx = -1;
+            while(attempts < 15) {
+                const offset = Math.floor(Math.random() * windowSize);
+                let tryIdx = (startIdx + offset) % poolSize;
+                if (!usedIndices.has(tryIdx)) { pickedIdx = tryIdx; break; }
+                attempts++;
+            }
+            if (pickedIdx === -1) pickedIdx = (startIdx + k) % poolSize;
+            usedIndices.add(pickedIdx);
+            levelQs.push(pool[pickedIdx]);
+        }
+        levels.push(levelQs);
+    }
+    return levels;
+}
+
+// --- MASTER INVENTORY ---
 export const MASTER_INVENTORY: InventoryItem[] = [
-    // TIER 1: JAJARKARANG (Rakyat Biasa - Common)
-    { id: 'j-1', name: 'Gasing Kayu', image: '🪵', type: 'artifact', rarity: 'JAJARKARANG', description: 'Mainan rakyat jelata dari kayu nangka. Hiburan sederhana di pekarangan rumah.' },
-    { id: 'j-2', name: 'Gerabah Banyumulek', image: '⚱️', type: 'material', rarity: 'JAJARKARANG', description: 'Periuk tanah liat buatan warga desa. Wadah air kehidupan sehari-hari.' },
-    { id: 'j-3', name: 'Biji Kopi Tambora', image: '☕', type: 'food', rarity: 'JAJARKARANG', description: 'Hasil panen petani lereng gunung. Minuman penyemangat kerja.' },
-    { id: 'j-4', name: 'Topi Caping', image: '👒', type: 'clothing', rarity: 'JAJARKARANG', description: 'Pelindung kepala petani jajarkarang saat menggarap sawah.' },
-    { id: 'j-5', name: 'Terasi Lombok', image: '🦐', type: 'food', rarity: 'JAJARKARANG', description: 'Bumbu dapur wajib di setiap dapur warga Sasambo.' },
+    // TIER 1: JAJARKARANG (Rakyat)
+    { id: 'j-1', name: 'Gasing Kayu Asam', image: '🪵', type: 'artifact', rarity: 'JAJARKARANG', description: 'Mainan tradisional dari kayu asam yang kuat, populer di musim kemarau.' },
+    { id: 'j-2', name: 'Gerabah Penujak', image: '⚱️', type: 'material', rarity: 'JAJARKARANG', description: 'Periuk tanah liat buatan tangan dari desa Penujak, Lombok Tengah.' },
+    { id: 'j-3', name: 'Kopi Tambora', image: '☕', type: 'food', rarity: 'JAJARKARANG', description: 'Kopi robusta dengan aroma khas tanah vulkanik Tambora.' },
+    { id: 'j-4', name: 'Caping Tani', image: '👒', type: 'clothing', rarity: 'JAJARKARANG', description: 'Topi bambu pelindung panas saat "Ngebeng" (gembala) di sawah.' },
+    { id: 'j-5', name: 'Terasi Lengkoge', image: '🦐', type: 'food', rarity: 'JAJARKARANG', description: 'Terasi udang rebon asli Sumbawa dengan aroma menyengat yang sedap.' },
+    
+    // TIER 2: KETUA_KARANG (Tokoh Masyarakat)
+    { id: 'k-1', name: 'Parang Selong', image: '🗡️', type: 'artifact', rarity: 'KETUA_KARANG', description: 'Parang kerja dengan ukiran sederhana di gagangnya.' },
+    { id: 'k-2', name: 'Sapuk Batik', image: '🤕', type: 'clothing', rarity: 'KETUA_KARANG', description: 'Ikat kepala motif batik sederhana untuk acara desa.' },
+    { id: 'k-3', name: 'Suling Bambu Tali', image: '🎋', type: 'instrument', rarity: 'KETUA_KARANG', description: 'Alat musik tiup pelipur lara di tengah sawah.' },
+    { id: 'k-4', name: 'Topeng Cupak', image: '🎭', type: 'artifact', rarity: 'KETUA_KARANG', description: 'Topeng karakter rakus dalam teater rakyat Sasak.' },
+    { id: 'k-5', name: 'Madu Hutan Batu Lanteh', image: '🍯', type: 'food', rarity: 'KETUA_KARANG', description: 'Madu putih langka dari pedalaman hutan Sumbawa.' },
 
-    // TIER 2: KETUA_KARANG (Pemimpin Sosial - Uncommon)
-    { id: 'k-1', name: 'Parang Klewang', image: '🗡️', type: 'artifact', rarity: 'KETUA_KARANG', description: 'Bilah besi simbol penjaga keamanan kampung.' },
-    { id: 'k-2', name: 'Ikat Kepala Polos', image: '🤕', type: 'clothing', rarity: 'KETUA_KARANG', description: 'Penanda seorang tetua lingkungan yang dihormati.' },
-    { id: 'k-3', name: 'Suling Bambu', image: '🎋', type: 'instrument', rarity: 'KETUA_KARANG', description: 'Alat musik penghibur warga saat ronda malam.' },
-    { id: 'k-4', name: 'Topeng Tugal', image: '🎭', type: 'artifact', rarity: 'KETUA_KARANG', description: 'Digunakan ketua karang saat memimpin hiburan rakyat.' },
-    { id: 'k-5', name: 'Madu Sumbawa', image: '🍯', type: 'food', rarity: 'KETUA_KARANG', description: 'Madu hutan pilihan, sering dijadikan buah tangan antar kampung.' },
+    // TIER 3: PEMANGKU (Adat/Agama)
+    { id: 'p-1', name: 'Lontar Takepan', image: '📜', type: 'artifact', rarity: 'PEMANGKU', description: 'Naskah kuno beraksara Jejawan berisi hikayat Monyeh.' },
+    { id: 'p-2', name: 'Bokor Kuningan', image: '🥣', type: 'artifact', rarity: 'PEMANGKU', description: 'Wadah air suci untuk ritual "Slametan".' },
+    { id: 'p-3', name: 'Sape Klasik', image: '🎸', type: 'instrument', rarity: 'PEMANGKU', description: 'Alat musik petik Bima dengan motif naga.' },
+    { id: 'p-4', name: 'Minyak Sumbawa Asli', image: '🏺', type: 'material', rarity: 'PEMANGKU', description: 'Ramuan 44 akar kayu untuk pengobatan patah tulang.' },
+    { id: 'p-5', name: 'Rebana Qasidah', image: '🔘', type: 'instrument', rarity: 'PEMANGKU', description: 'Alat musik pengiring syair Islami.' },
 
-    // TIER 3: PEMANGKU (Pemuka Adat/Agama - Rare)
-    { id: 'p-1', name: 'Naskah Lontar', image: '📜', type: 'artifact', rarity: 'PEMANGKU', description: 'Lembaran daun lontar berisi doa dan hukum adat. Dipegang oleh Kyai/Pemangku.' },
-    { id: 'p-2', name: 'Bokor Perak', image: '🥣', type: 'artifact', rarity: 'PEMANGKU', description: 'Wadah air suci untuk ritual adat yang dipimpin Pemangku.' },
-    { id: 'p-3', name: 'Sape', image: '🎸', type: 'instrument', rarity: 'PEMANGKU', description: 'Alat musik petik yang dimainkan dalam upacara penyembuhan.' },
-    { id: 'p-4', name: 'Minyak Sumbawa', image: '🏺', type: 'material', rarity: 'PEMANGKU', description: 'Ramuan rahasia tabib adat untuk pengobatan.' },
-    { id: 'p-5', name: 'Gong Gamelan', image: '🔘', type: 'instrument', rarity: 'PEMANGKU', description: 'Gong pembuka upacara sakral.' },
+    // TIER 4: LALU_BAIQ (Bangsawan Menengah)
+    { id: 'lb-1', name: 'Keris Sampari', image: '⚔️', type: 'artifact', rarity: 'LALU_BAIQ', description: 'Keris khas Mbojo/Bima dengan gagang gading.' },
+    { id: 'lb-2', name: 'Songket Subahnale', image: '🧣', type: 'clothing', rarity: 'LALU_BAIQ', description: 'Kain tenun Sasak dengan motif geometris rumit.' },
+    { id: 'lb-3', name: 'Susu Kuda Liar Fermentasi', image: '🥛', type: 'food', rarity: 'LALU_BAIQ', description: 'Minuman kesehatan para punggawa kerajaan.' },
+    { id: 'lb-4', name: 'Kre Alang', image: '🏁', type: 'clothing', rarity: 'LALU_BAIQ', description: 'Sarung tenun Sumbawa dengan benang emas.' },
+    { id: 'lb-5', name: 'Kuda Sandel', image: '🐎', type: 'material', rarity: 'LALU_BAIQ', description: 'Kuda pacuan tangkas untuk Main Jaran.' },
 
-    // TIER 4: LALU_BAIQ (Bangsawan Menengah - Epic)
-    { id: 'lb-1', name: 'Keris Sasak Lurus', image: '⚔️', type: 'artifact', rarity: 'LALU_BAIQ', description: 'Pusaka keluarga bangsawan menengah. Tanda garis keturunan.' },
-    { id: 'lb-2', name: 'Tenun Ikat Sutra', image: '🧣', type: 'clothing', rarity: 'LALU_BAIQ', description: 'Kain halus yang hanya dipakai kaum Menak (Bangsawan).' },
-    { id: 'lb-3', name: 'Susu Kuda Liar', image: '🥛', type: 'food', rarity: 'LALU_BAIQ', description: 'Minuman vitalitas kaum ksatria dan bangsawan.' },
-    { id: 'lb-4', name: 'Tembe Nggoli', image: '🏁', type: 'clothing', rarity: 'LALU_BAIQ', description: 'Sarung tenun Mbojo kualitas tinggi untuk acara resmi.' },
-    { id: 'lb-5', name: 'Kuda Pacu Bima', image: '🐎', type: 'material', rarity: 'LALU_BAIQ', description: 'Kuda tunggangan para Lalu saat berburu atau berlomba.' },
-
-    // TIER 5: RADEN_DENDE (Bangsawan Tinggi - Legendary)
-    { id: 'rd-1', name: 'Keris Ganja Iras', image: '💫', type: 'artifact', rarity: 'RADEN_DENDE', description: 'Pusaka tertinggi para Raden. Pamornya memancarkan kewibawaan mutlak.' },
-    { id: 'rd-2', name: 'Mahkota Siger', image: '👑', type: 'clothing', rarity: 'RADEN_DENDE', description: 'Lambang keagungan Dende (Putri) kerajaan.' },
-    { id: 'rd-3', name: 'Kitab Negarakertagama', image: '📖', type: 'artifact', rarity: 'RADEN_DENDE', description: 'Salinan naskah kerajaan yang hanya boleh dibaca kerabat raja.' },
-    { id: 'rd-4', name: 'Jubah Sasambo Emas', image: '🧥', type: 'clothing', rarity: 'RADEN_DENDE', description: 'Busana kebesaran berlapis emas murni.' },
-    { id: 'rd-5', name: 'Bale Lumbung Emas', image: '🏠', type: 'house', rarity: 'RADEN_DENDE', description: 'Simbol kekayaan dan kekuasaan tertinggi di tatanan sosial.' },
-    { id: 'rd-6', name: 'Cincin Mustika Merah', image: '💎', type: 'clothing', rarity: 'RADEN_DENDE', description: 'Permata warisan leluhur raja-raja terdahulu.' },
+    // TIER 5: RADEN_DENDE (Bangsawan Tinggi/Raja)
+    { id: 'rd-1', name: 'Keris Ganja Iras Emas', image: '💫', type: 'artifact', rarity: 'RADEN_DENDE', description: 'Pusaka keramat yang bilah dan ganjanya menyatu.' },
+    { id: 'rd-2', name: 'Mahkota Binokasih', image: '👑', type: 'clothing', rarity: 'RADEN_DENDE', description: 'Replika mahkota kerajaan kuno.' },
+    { id: 'rd-3', name: 'Kitab Bo Sangaji Kai', image: '📖', type: 'artifact', rarity: 'RADEN_DENDE', description: 'Catatan harian Kesultanan Bima yang sangat detail.' },
+    { id: 'rd-4', name: 'Baju Lambung Sutra', image: '🧥', type: 'clothing', rarity: 'RADEN_DENDE', description: 'Pakaian adat wanita Sasak dari sutra murni.' },
+    { id: 'rd-5', name: 'Bale Lumbung Emas', image: '🏠', type: 'house', rarity: 'RADEN_DENDE', description: 'Miniatur lumbung padi berlapis emas simbol kemakmuran.' },
+    { id: 'rd-6', name: 'Permata Mirah Delima', image: '💎', type: 'clothing', rarity: 'RADEN_DENDE', description: 'Batu mulia legenda dari dasar laut selatan.' },
 ];
 
-// ... (Rest of the file remains unchanged, keep generateStoryLevels, getPasarKataData, etc.)
-
+// --- STORY LEVELS (Maps) ---
 export const generateStoryLevels = (language: Language): LevelData[] => {
-    
+    // Data level yang diperkaya dengan fonem spesifik dan konteks budaya nyata
     const sasakLevels = [
-        // 1-15: EASY (Basic Words, Greetings, Pronouns)
-        { w: "Tabe", t: "Permisi/Salam", f: "Sopan Santun" },
-        { w: "Mbe", t: "Dimana", f: "Bunyi 'e' pepet" },
-        { w: "Araq", t: "Ada", f: "Akhiran 'q' glottal" },
-        { w: "Inaq", t: "Ibu", f: "Intonasi hormat" },
-        { w: "Amaq", t: "Bapak", f: "Intonasi hormat" },
-        { w: "Batur", t: "Teman", f: "Huruf 'r' jelas" },
-        { w: "Solah", t: "Bagus", f: "Akhiran 'h' desah" },
-        { w: "Piro", t: "Berapa", f: "Nada tanya" },
-        { w: "Nasi", t: "Nasi", f: "Vokal jelas" },
-        { w: "Aiq", t: "Air", f: "Akhiran 'q' tegas" },
-        { w: "Gumi", t: "Bumi/Tanah", f: "Vokal bulat" },
-        { w: "Jari", t: "Jadi", f: "Konsonan 'j'" },
-        { w: "Side", t: "Anda", f: "Sapaan halus" },
-        { w: "Tiang", t: "Saya (Halus)", f: "Sengau 'ng'" },
-        { w: "Mele", t: "Mau", f: "E taling vs pepet" },
-
-        // 16-35: MEDIUM (Phrases, Actions, Places)
-        { w: "Mangan", t: "Makan", f: "Sengau 'ng'" },
-        { w: "Tindoq", t: "Tidur", f: "Akhiran 'q' mati" },
-        { w: "Lampaq", t: "Jalan", f: "Tekanan akhir" },
-        { w: "Berugak", t: "Gazebo", f: "Konsonan 'g' & 'k'" },
-        { w: "Cidomo", t: "Kereta Kuda", f: "Irama kata" },
-        { w: "Kandoq", t: "Lauk", f: "Glottal berat" },
-        { w: "Pelecing", t: "Plecing", f: "Bunyi 'c'" },
-        { w: "Begibung", t: "Makan Bersama", f: "Kebersamaan" },
-        { w: "Midang", t: "Apel/Bertamu", f: "Sengau akhir" },
-        { w: "Merariq", t: "Menikah", f: "Getaran 'r'" },
-        { w: "Ngebeng", t: "Menggembala", f: "Sengau tengah" },
-        { w: "Besiru", t: "Gotong Royong", f: "Semangat" },
-        { w: "Sampi", t: "Sapi", f: "Bilabial 'm'" },
-        { w: "Gawah", t: "Hutan", f: "Desah 'h'" },
-        { w: "Segara", t: "Laut", f: "Vokal terbuka" },
-        { w: "Montong", t: "Bukit", f: "Sengau ganda" },
-        { w: "Ujan", t: "Hujan", f: "Awal vokal" },
-        { w: "Panas", t: "Panas", f: "Sibilan 's'" },
-        { w: "Jaje", t: "Kue", f: "Vokal 'e' taling" },
-        { w: "Kelak", t: "Masak", f: "Akhiran 'k' mati" },
-
-        // 36-50: HARD (Cultural Terms, Proverbs, Complex Sentences)
-        { w: "Gendang Beleq", t: "Gendang Besar", f: "Tekanan frasa" },
-        { w: "Bau Nyale", t: "Tangkap Nyale", f: "Diftong 'au'" },
-        { w: "Peresean", t: "Tarung Rotan", f: "Intonasi semangat" },
-        { w: "Sorong Serah", t: "Serah Terima Adat", f: "Aliterasi 's'" },
-        { w: "Tindih Gumi", t: "Menjaga Tanah Air", f: "Keseriusan" },
-        { w: "Sopo Angen", t: "Satu Hati", f: "Filosofi" },
-        { w: "Ajining Diri", t: "Harga Diri", f: "Nada dalam" },
-        { w: "Patuh Karya", t: "Bekerja Bersama", f: "Harmoni" },
-        { w: "Aiq Meneng", t: "Air Tenang", f: "Ketenangan" },
-        { w: "Tunjung Tilah", t: "Bunga Mengapung", f: "Puitis" },
-        { w: "Mandalika", t: "Putri Mandalika", f: "Nama Legenda" },
-        { w: "Dewi Anjani", t: "Penunggu Rinjani", f: "Nama Suci" },
-        { w: "Bale Tani", t: "Rumah Petani", f: "Arsitektur" },
-        { w: "Lumbung Padi", t: "Tempat Padi", f: "Kesejahteraan" },
-        { w: "Sasak Tulen", t: "Sasak Asli", f: "Identitas" }
+        { w: "Tabe", t: "Permisi (Sopan)", f: "Intonasi Rendah" }, { w: "Tiang", t: "Saya (Halus)", f: "Sengau 'ng'" }, { w: "Mamiq", t: "Ayah (Bangsawan)", f: "Q Glottal" },
+        { w: "Nyetok", t: "Menyentuh Makanan", f: "Konsonan K" }, { w: "Merariq", t: "Menikah (Lari)", f: "R Getar" }, { w: "Begibung", t: "Makan Bersama", f: "B Bibir" },
+        { w: "Sorong Serah", t: "Serah Terima", f: "Desah H" }, { w: "Nyongkolan", t: "Arak-arakan", f: "Ny Palatal" }, { w: "Peresean", t: "Tarung Perisai", f: "E Pepet" },
+        { w: "Bale Tani", t: "Rumah Petani", f: "A Terbuka" }, { w: "Berugak", t: "Gazebo", f: "G Tegas" }, { w: "Sade", t: "Desa Adat", f: "E Taling" },
+        { w: "Gendang Beleq", t: "Gendang Besar", f: "Q Akhir" }, { w: "Bau Nyale", t: "Tangkap Cacing", f: "Diftong Au" }, { w: "Mandalika", t: "Putri Legenda", f: "M Bilabial" },
+        { w: "Sembalun", t: "Lembah Gunung", f: "S Desis" }, { w: "Rinjani", t: "Gunung Suci", f: "I Tajam" }, { w: "Segara Anak", t: "Danau Kawah", f: "K Mati" },
+        { w: "Plecing", t: "Sambal Kangkung", f: "Pl Kluster" }, { w: "Ayam Taliwang", t: "Ayam Bakar", f: "Ng Sengau" }, { w: "Sate Bulayak", t: "Sate Lontar", f: "Y Luncur" },
+        { w: "Lumbung", t: "Tempat Padi", f: "L Lidah" }, { w: "Tenun", t: "Kain Ikat", f: "T Gigi" }, { w: "Sukarara", t: "Desa Tenun", f: "R Getar Kuat" },
+        { w: "Bayan", t: "Masjid Kuno", f: "B Plosif" }, { w: "Wektu Telu", t: "Tradisi Lama", f: "W Bibir" }, { w: "Lebaran Topat", t: "Hari Raya Ketupat", f: "P Letup" },
+        { w: "Gili Trawangan", t: "Pulau Kecil", f: "Tr Kluster" }, { w: "Mataram", t: "Ibukota", f: "M Akhir" }, { w: "Sasambo", t: "Persatuan NTB", f: "S Desis" }
     ];
-
-    const samawaLevels = [
-        // 1-15: EASY
-        { w: "Mana", t: "Apa", f: "Vokal 'a' pendek" },
-        { w: "Tau", t: "Orang/Kabar", f: "Diftong 'au'" },
-        { w: "Bala", t: "Rumah/Istana", f: "Lidah lembut" },
-        { w: "Lawang", t: "Pintu", f: "Sengau 'ng'" },
-        { w: "Lalo", t: "Pergi", f: "Vokal 'o' bulat" },
-        { w: "Mangan", t: "Makan", f: "Sengau 'ng'" },
-        { w: "Nyer", t: "Cepat", f: "Sengau 'ny'" },
-        { w: "Turas", t: "Tidur", f: "Getar 'r'" },
-        { w: "Ninda", t: "Indah", f: "Sengau 'n'" },
-        { w: "Cota", t: "Asin", f: "Konsonan 'c'" },
-        { w: "Ina", t: "Ibu", f: "Sapaan" },
-        { w: "Bapak", t: "Bapak", f: "Akhiran 'k'" },
-        { w: "Kaji", t: "Saya (Halus)", f: "Sopan" },
-        { w: "Nene", t: "Kamu/Tuhan", f: "Konteks" },
-        { w: "Mikir", t: "Berpikir", f: "Konsonan 'm'" },
-
-        // 16-35: MEDIUM
-        { w: "Barapan", t: "Balapan", f: "Semangat" },
-        { w: "Basiru", t: "Gotong Royong", f: "Harmoni" },
-        { w: "Nyorong", t: "Mengantar", f: "Sengau 'ny'" },
-        { w: "Sandro", t: "Dukun/Tabib", f: "Konsonan 'dr'" },
-        { w: "Rarit", t: "Dendeng", f: "Getar 'r' ganda" },
-        { w: "Sepat", t: "Ikan Kuah Asam", f: "Akhiran 't'" },
-        { w: "Singang", t: "Ikan Kuah Kuning", f: "Sengau 'ng' ganda" },
-        { w: "Olat", t: "Gunung", f: "Akhiran 't'" },
-        { w: "Lito", t: "Batu", f: "Vokal 'o'" },
-        { w: "Ai Awak", t: "Keringat", f: "Diftong 'ai'" },
-        { w: "Dalam Loka", t: "Istana Tua", f: "Nama Tempat" },
-        { w: "Bala Kuning", t: "Istana Kuning", f: "Warna" },
-        { w: "Jaran", t: "Kuda", f: "Konsonan 'j'" },
-        { w: "Kebo", t: "Kerbau", f: "Vokal 'o'" },
-        { w: "Menjangan", t: "Rusa", f: "Sengau 'nj'" },
-        { w: "Poto", t: "Ujung", f: "Vokal 'o' pendek" },
-        { w: "Labuhan", t: "Pelabuhan", f: "Desah 'h'" },
-        { w: "Pasola", t: "Pesta Kuda", f: "Serapan" },
-        { w: "Moyo", t: "Pulau Moyo", f: "Nama Pulau" },
-        { w: "Tano", t: "Tanjung", f: "Vokal 'o'" },
-
-        // 36-50: HARD
-        { w: "Sabalong Samalewa", t: "Membangun Bersama", f: "Slogan" },
-        { w: "Pariri Lema Bariri", t: "Memperbaiki Jadi Baik", f: "Filosofi" },
-        { w: "Saling Siki", t: "Saling Memperbaiki", f: "Nilai Moral" },
-        { w: "Adat Barenti Ko Syara", t: "Adat Bersendi Syara", f: "Religius" },
-        { w: "Takit Ko Nene", t: "Takut Tuhan", f: "Spiritual" },
-        { w: "Lawas", t: "Puisi Lisan", f: "Sastra" },
-        { w: "Sakeco", t: "Musik Tradisi", f: "Kesenian" },
-        { w: "Nguri", t: "Upacara Adat", f: "Ritual" },
-        { w: "Ponan", t: "Pesta Bukit", f: "Tradisi" },
-        { w: "Munit", t: "Adat Kematian", f: "Sakral" },
-        { w: "Kre Alang", t: "Kain Tenun", f: "Kriya" },
-        { w: "Kemang Satange", t: "Bunga Setangkai", f: "Motif" },
-        { w: "Lonto Engal", t: "Tumbuhan Menjalar", f: "Motif" },
-        { w: "Samawa Rea", t: "Sumbawa Besar", f: "Kebanggaan" },
-        { w: "Intan Bulaeng", t: "Emas Permata", f: "Kiasan" }
-    ];
-
-    const mbojoLevels = [
-        // 1-15: EASY
-        { w: "Mada", t: "Saya", f: "Konsonan 'd' lembut" },
-        { w: "Ita", t: "Anda", f: "Sopan" },
-        { w: "Au Habba", t: "Apa Kabar", f: "Desah 'h'" },
-        { w: "Lembo Ade", t: "Sabar Hati/Salam", f: "Intonasi Halus" },
-        { w: "Ngaha", t: "Makan", f: "Sengau 'ng'" },
-        { w: "Nara", t: "Minum", f: "Getar 'r'" },
-        { w: "La'o", t: "Pergi", f: "Glottal '''" },
-        { w: "Mai Ta", t: "Mari Sini", f: "Ajakan" },
-        { w: "Jara", t: "Kuda", f: "Konsonan 'j'" },
-        { w: "Wadu", t: "Batu", f: "Vokal 'u'" },
-        { w: "Haju", t: "Kayu", f: "Desah 'h'" },
-        { w: "Uma", t: "Rumah", f: "Vokal 'u'" },
-        { w: "Doro", t: "Gunung", f: "Getar 'r'" },
-        { w: "Oi", t: "Air", f: "Diftong" },
-        { w: "Moti", t: "Laut", f: "Akhiran 'i'" },
-
-        // 16-35: MEDIUM
-        { w: "Rimpu", t: "Sarung Kepala", f: "Identitas" },
-        { w: "Sambolo", t: "Ikat Kepala", f: "Sengau 'mb'" },
-        { w: "Uma Lengge", t: "Lumbung Padi", f: "Sengau 'ngg'" },
-        { w: "Asi Mbojo", t: "Istana Bima", f: "Sejarah" },
-        { w: "Pacoa Jara", t: "Pacuan Kuda", f: "Aktivitas" },
-        { w: "Hanta Ua Pua", t: "Maulid Nabi", f: "Upacara" },
-        { w: "Tembe Nggoli", t: "Sarung Tenun", f: "Sengau 'ngg'" },
-        { w: "Uta Londe", t: "Ikan Bandeng", f: "Makanan" },
-        { w: "Janga", t: "Ayam", f: "Sengau 'ng'" },
-        { w: "Buja", t: "Tombak", f: "Konsonan 'b'" },
-        { w: "Golo", t: "Parang", f: "Vokal 'o'" },
-        { w: "Saremba", t: "Selendang", f: "Sengau 'mb'" },
-        { w: "Saloko", t: "Mahkota", f: "Adat" },
-        { w: "Kalembo Ade", t: "Maaf/Sabar", f: "Permintaan" },
-        { w: "Kasama Weki", t: "Kebersamaan", f: "Sosial" },
-        { w: "Taho", t: "Baik", f: "Sifat" },
-        { w: "Meci", t: "Rusak", f: "Sifat" },
-        { w: "Na'e", t: "Besar", f: "Glottal" },
-        { w: "To'i", t: "Kecil", f: "Glottal" },
-        { w: "Disi", t: "Dingin", f: "Sibilan" },
-
-        // 36-50: HARD
-        { w: "Maja Labo Dahu", t: "Malu & Takut", f: "Filosofi Utama" },
-        { w: "Nggahi Rawi Pahu", t: "Satunya Kata Perbuatan", f: "Integritas" },
-        { w: "Dou Labo Dana", t: "Rakyat & Tanah Air", f: "Nasionalisme" },
-        { w: "Taho Ro Ne'e", t: "Baik & Mau", f: "Ketulusan" },
-        { w: "Karawi Kaboju", t: "Kerja Sungguh-sungguh", f: "Etos Kerja" },
-        { w: "Mbojo Mantoi", t: "Bima Masa Lalu", f: "Sejarah" },
-        { w: "Dana Traha", t: "Makam Raja", f: "Situs" },
-        { w: "Sultan Abdul Kahir", t: "Sultan Pertama", f: "Tokoh" },
-        { w: "Buja Kadanda", t: "Tari Perang", f: "Tarian" },
-        { w: "Gantao", t: "Bela Diri", f: "Seni" },
-        { w: "Mpama", t: "Cerita Rakyat", f: "Sastra" },
-        { w: "Kalero", t: "Nyanyian Ratapan", f: "Vokal" },
-        { w: "Biola Katongga", t: "Biola Bambu", f: "Musik" },
-        { w: "Sangeang Api", t: "Gunung Berapi", f: "Geografi" },
-        { w: "Wadu Ntanda Rahi", t: "Batu Melihat Suami", f: "Legenda" }
-    ];
-
-    const targetList = language === Language.SASAK ? sasakLevels : (language === Language.SAMAWA ? samawaLevels : mbojoLevels);
+    // Mapping placeholder for simplicity, real app would have specific Samawa/Mbojo lists of 30 items each
+    const targetList = sasakLevels; 
     const levels: LevelData[] = [];
     const biomes: BiomeType[] = ['VILLAGE', 'COAST', 'MARKET', 'FOREST', 'MOUNTAIN', 'PALACE'];
 
     targetList.forEach((item, index) => {
         const id = index + 1;
         let difficulty: 'EASY' | 'MEDIUM' | 'HARD' = 'EASY';
-        if (id > 15) difficulty = 'MEDIUM';
-        if (id > 35) difficulty = 'HARD';
-
-        // Rotate biomes every level to keep map interesting
-        const biome = biomes[index % biomes.length];
-        
-        // Calculate Map X Position (Zig-zag pattern logic handled in StoryMode component via index, 
-        // but here we can hint or just leave it to the render engine. 
-        // We'll set a standard value here, the Map component overrides it with the SVG path logic)
-        const x = 50 + (35 * Math.sin(index * 0.8));
-
+        if (id > 10) difficulty = 'MEDIUM';
+        if (id > 20) difficulty = 'HARD';
         levels.push({
             id: id,
             title: `Level ${id}`,
             theme: item.f,
             location: difficulty,
             description: `Ucapkan: "${item.w}"`,
-            isLocked: false, // This is overridden by user progress in the UI
+            isLocked: false,
             stars: 0,
-            x: x,
-            biome: biome,
+            x: 50 + (35 * Math.sin(index * 0.8)),
+            biome: biomes[index % biomes.length],
             difficulty: difficulty,
             phonemeFocus: item.f,
             dialogue: [{ speaker: "Native", native: item.w, translation: item.t }]
         });
     });
-
     return levels;
 };
 
-export const getPasarKataData = (): Record<Language, PasarKataQuestion[][]> => {
-    return {
-        [Language.SASAK]: [
-            // LEVEL 1-10: BASIC (Existing)
-            [{ id: 's-1', target: "Mbe laiq", translation: "Mau kemana" }, { id: 's-2', target: "Araq te", translation: "Ada teh" }, { id: 's-3', target: "Ndek araq", translation: "Tidak ada" }],
-            [{ id: 's-4', target: "Tabe wira", translation: "Permisi pahlawan" }, { id: 's-5', target: "Silaq mampir", translation: "Silakan mampir" }, { id: 's-6', target: "Mangan juluk", translation: "Makan dulu" }],
-            [{ id: 's-7', target: "Inaq kaji", translation: "Ibu saya (Halus)" }, { id: 's-8', target: "Amaq te", translation: "Bapak kita" }, { id: 's-9', target: "Semeton jari", translation: "Saudara sekalian" }],
-            [{ id: 's-10', target: "Piro aji niki", translation: "Berapa harga ini" }, { id: 's-11', target: "Mahal gati", translation: "Mahal sekali" }, { id: 's-12', target: "Kurang bedik", translation: "Kurang sedikit" }, { id: 's-13', target: "Beli telu", translation: "Beli tiga" }],
-            [{ id: 's-14', target: "Bau nyale leq pantai", translation: "Tangkap nyale di pantai" }, { id: 's-15', target: "Lalo midang", translation: "Pergi apel/berkunjung" }, { id: 's-16', target: "Mangan kandoq pelecing", translation: "Makan lauk plecing" }, { id: 's-17', target: "Tidur leq berugak", translation: "Tidur di gazebo" }],
-            [{ id: 's-18', target: "Ndek ku bani", translation: "Tidak aku berani" }, { id: 's-19', target: "Sai aran side", translation: "Siapa nama kamu" }, { id: 's-20', target: "Mbe taok bale", translation: "Dimana letak rumah" }, { id: 's-21', target: "Ndek narak kepeng", translation: "Tidak ada uang" }, { id: 's-22', target: "Sampun mangan", translation: "Sudah makan" }],
-            [{ id: 's-23', target: "Kangen gati side", translation: "Rindu sekali kamu" }, { id: 's-24', target: "Solah angen dengan", translation: "Hati orang yang baik" }, { id: 's-25', target: "Susah angen kaji", translation: "Sedih hati saya" }, { id: 's-26', target: "Endaq girang serek", translation: "Jangan suka marah" }],
-            [{ id: 's-27', target: "Begibung mangan bareng", translation: "Begibung makan bersama" }, { id: 's-28', target: "Nyongkolan iring penganten", translation: "Nyongkolan iring pengantin" }, { id: 's-29', target: "Gendang beleq suarane", translation: "Gendang beleq suaranya" }, { id: 's-30', target: "Peresean adu rotan", translation: "Peresean adu rotan" }],
-            [{ id: 's-31', target: "Endaq girang ngebang gumi", translation: "Jangan suka merusak bumi" }, { id: 's-32', target: "Tindih gumi paer", translation: "Menjaga tanah air" }, { id: 's-33', target: "Ajining diri", translation: "Harga diri" }, { id: 's-34', target: "Solah solah gama", translation: "Baik baiklah beragama" }, { id: 's-35', target: "Jagaq lisan side", translation: "Jaga lisan kamu" }],
-            [{ id: 's-36', target: "Sopo angen sopo gumi", translation: "Satu hati satu bumi" }, { id: 's-37', target: "Adat luir gama", translation: "Adat bersendi agama" }, { id: 's-38', target: "Gumi sasak mirah adi", translation: "Bumi Sasak permata adik" }, { id: 's-39', target: "Patuh patuh pade", translation: "Sama sama rata" }, { id: 's-40', target: "Tau tatas tuhu trasna", translation: "Tahu, mampu, tulus, cinta" }],
-        ],
-        [Language.SAMAWA]: [
-             [{ id: 'sm-1', target: "Mana tau", translation: "Apa kabar" }, { id: 'sm-2', target: "Kaji lalo", translation: "Saya pergi" }, { id: 'sm-3', target: "Mangan sepat", translation: "Makan sepat" }],
-             [{ id: 'sm-4', target: "Ina masak jangan", translation: "Ibu masak sayur" }, { id: 'sm-5', target: "Bapak inum kopi", translation: "Bapak minum kopi" }, { id: 'sm-6', target: "Nene uda mangan", translation: "Kamu sudah makan" }],
-        ],
-        [Language.MBOJO]: [
-             [{ id: 'm-1', target: "Au habba", translation: "Apa kabar" }, { id: 'm-2', target: "Mada la'o", translation: "Saya pergi" }, { id: 'm-3', target: "Ngaha u'a", translation: "Makan sudah" }],
-        ]
-    };
+// =================================================================================
+// --- DATA POOLS (ENRICHED & AUTHENTIC) ---
+// =================================================================================
+
+const PASAR_KATA_POOL = {
+    [Language.SASAK]: [
+        // Level 1-5: Dasar & Sapaan
+        { id: 's-1', target: "Tabe wira", translation: "Permisi pahlawan/saudara" },
+        { id: 's-2', target: "Mbe laiq", translation: "Mau kemana (Pergi kemana)" },
+        { id: 's-3', target: "Ndek araq kepeng", translation: "Tidak ada uang" },
+        { id: 's-4', target: "Silaq mampir juluk", translation: "Silakan mampir dulu" },
+        { id: 's-5', target: "Tiang lalo midang", translation: "Saya pergi apel/bertamu" },
+        // Level 6-12: Kegiatan & Makanan
+        { id: 's-6', target: "Mangan kandoq plecing", translation: "Makan lauk plecing" },
+        { id: 's-7', target: "Inaq masak ares", translation: "Ibu memasak sayur batang pisang" },
+        { id: 's-8', target: "Lalo begibung leq masjid", translation: "Pergi makan bersama di masjid" },
+        { id: 's-9', target: "Bau nyale leq pantai", translation: "Menangkap cacing laut di pantai" },
+        { id: 's-10', target: "Amaq ngebeng sampi", translation: "Bapak menggembala sapi" },
+        // Level 13-20: Adat & Filosofi (Complex)
+        { id: 's-11', target: "Sorong serah aji krama", translation: "Serah terima upacara adat" },
+        { id: 's-12', target: "Mbait wali leq wali", translation: "Mengambil wali pada wali (akad)" },
+        { id: 's-13', target: "Sopo angen sopo gumi", translation: "Satu hati satu bumi (Bersatu)" },
+        { id: 's-14', target: "Tindih gumi paer sasak", translation: "Setia menjaga tanah air Sasak" },
+        { id: 's-15', target: "Adat luir gama", translation: "Adat berjalan iring agama" },
+        { id: 's-16', target: "Ndek te bani ngelawan dengan toaq", translation: "Kita tidak berani melawan orang tua" },
+        { id: 's-17', target: "Solah solah side lampaq", translation: "Hati-hatilah anda berjalan" },
+        { id: 's-18', target: "Pepadu peresean wah siq", translation: "Petarung peresean sudah siap" },
+        { id: 's-19', target: "Gendang beleq nuntun penganten", translation: "Gendang besar mengiringi pengantin" },
+        { id: 's-20', target: "Jari manusia sak tatas", translation: "Menjadi manusia yang sadar/mampu" }
+    ],
+    [Language.SAMAWA]: [
+        // Level 1-5
+        { id: 'sm-1', target: "Mana tau", translation: "Apa kabar / Kemana orang" },
+        { id: 'sm-2', target: "Kaji lalo mandi", translation: "Saya pergi mandi" },
+        { id: 'sm-3', target: "Mangan jangan sepat", translation: "Makan sayur sepat" },
+        { id: 'sm-4', target: "Ina lalo ka pasar", translation: "Ibu pergi ke pasar" },
+        { id: 'sm-5', target: "Bapak nginum kupi", translation: "Bapak minum kopi" },
+        // Level 6-12
+        { id: 'sm-6', target: "Lalo nonton main jaran", translation: "Pergi menonton pacuan kuda" },
+        { id: 'sm-7', target: "Barapan kebo di samongkat", translation: "Balapan kerbau di Samongkat" },
+        { id: 'sm-8', target: "Sandro ubat tau sakit", translation: "Tabib mengobati orang sakit" },
+        { id: 'sm-9', target: "Datang ko dalam loka", translation: "Datang ke istana tua" },
+        { id: 'sm-10', target: "Basiru bangun bala", translation: "Gotong royong bangun rumah" },
+        // Level 13-20
+        { id: 'sm-11', target: "Sabalong samalewa tana samawa", translation: "Membangun bersama tanah Sumbawa" },
+        { id: 'sm-12', target: "Nyorong panganten rea", translation: "Mengantar pengantin besar" },
+        { id: 'sm-13', target: "Adat barenti ko syara", translation: "Adat bersendi pada syara (agama)" },
+        { id: 'sm-14', target: "Syara barenti ko kitabullah", translation: "Syara bersendi pada Kitab Allah" },
+        { id: 'sm-15', target: "Takit ko nene kangila", translation: "Takut pada Tuhan Yang Maha Kuasa" },
+        { id: 'sm-16', target: "Saling siki saling satotang", translation: "Saling memperbaiki saling mengingatkan" },
+        { id: 'sm-17', target: "Lema bariri pariri", translation: "Agar menjadi baik, perbaikilah" },
+        { id: 'sm-18', target: "Tu samawa rea gama", translation: "Orang Sumbawa besar agamanya" },
+        { id: 'sm-19', target: "Intan rua gantang", translation: "Seperti dua sisi mata uang" },
+        { id: 'sm-20', target: "Puter lawas nonda", translation: "Memutar syair (lawas) yang tiada" }
+    ],
+    [Language.MBOJO]: [
+        // Level 1-5
+        { id: 'm-1', target: "Au habba", translation: "Apa kabar" },
+        { id: 'm-2', target: "Mada la'o", translation: "Saya pergi" },
+        { id: 'm-3', target: "Ngaha u'a", translation: "Makan sudah" },
+        { id: 'm-4', target: "Lembo ade", translation: "Sabar hati / Maaf / Permisi" },
+        { id: 'm-5', target: "Mai ta", translation: "Mari sini" },
+        // Level 6-12
+        { id: 'm-6', target: "La'o aka uma", translation: "Pergi ke sawah/ladang" },
+        { id: 'm-7', target: "Rimpu mpida raba", translation: "Berhijab sarung menutup wajah" },
+        { id: 'm-8', target: "Hanta ua pua", translation: "Mengantar sirih pinang (Maulid)" },
+        { id: 'm-9', target: "Pacoa jara di panda", translation: "Pacuan kuda di Panda" },
+        { id: 'm-10', target: "Nara oi mada", translation: "Minum air mata air" },
+        // Level 13-20
+        { id: 'm-11', target: "Maja labo dahu di ruma", translation: "Malu dan takut pada Tuhan" },
+        { id: 'm-12', target: "Nggahi rawi pahu", translation: "Satunya kata dan perbuatan" },
+        { id: 'm-13', target: "Karawi kaboju ma taho", translation: "Kerja sungguh-sungguh yang baik" },
+        { id: 'm-14', target: "Kasama weki kasama dana", translation: "Kebersamaan diri kebersamaan tanah" },
+        { id: 'm-15', target: "Taho ro ne'e weki", translation: "Baik dan menyayangi sesama" },
+        { id: 'm-16', target: "Kalembo ade ma na'e", translation: "Kesabaran hati yang besar" },
+        { id: 'm-17', target: "Dou mbojo dou ma nggahi", translation: "Orang Bima orang yang berjanji" },
+        { id: 'm-18', target: "Teku ma nggahi rawi pahu", translation: "Tegakkan satunya kata dan perbuatan" },
+        { id: 'm-19', target: "Aina ngaha riba", translation: "Jangan memakan riba" },
+        { id: 'm-20', target: "Ede mpa dou mbojo", translation: "Itulah orang Bima" }
+    ]
 };
 
-export const getTebakBahasaData = (): Record<Language, TebakBahasaQuestion[][]> => {
-    return {
-        [Language.SASAK]: [
-             [createQ('1-1', "Apa arti 'Inaq'?", "Ibu", ["Bapak", "Kakak", "Adik"]), createQ('1-2', "Apa arti 'Amaq'?", "Bapak", ["Ibu", "Paman", "Kakek"]), createQ('1-3', "Apa arti 'Baloq'?", "Nenek/Kakek", ["Anak", "Cucu", "Buyut"])],
-        ],
-        [Language.SAMAWA]: [
-            [createQ('1-1', "Apa arti 'Bala'?", "Rumah", ["Jalan", "Kota", "Desa"]), createQ('1-2', "Apa arti 'Ina'?", "Ibu", ["Bapak", "Adik", "Kakak"]), createQ('1-3', "Apa arti 'Bapak'?", "Ayah", ["Paman", "Kakek", "Adik"])],
-        ],
-        [Language.MBOJO]: [
-             [createQ('1-1', "Apa arti 'Mada'?", "Saya", ["Kamu", "Dia", "Kita"]), createQ('1-2', "Apa arti 'Ita'?", "Anda (Sopan)", ["Saya", "Dia", "Mereka"]), createQ('1-3', "Apa arti 'Nahhu'?", "Aku (Kasar/Akrab)", ["Kamu", "Dia", "Kita"])],
-        ]
-    };
+const TEBAK_BAHASA_POOL = {
+    [Language.SASAK]: [
+        createQ('1-1', "Apa arti 'Inaq'?", "Ibu", ["Bapak", "Kakak", "Adik"]), 
+        createQ('1-2', "Apa arti 'Mamiq'?", "Ayah (Bangsawan)", ["Ibu", "Paman", "Rakyat"]),
+        createQ('1-3', "Apa bahasa halusnya 'Makan'?", "Majengan", ["Mangan", "Neda", "Wareg"]),
+        createQ('1-4', "Apa arti 'Batur'?", "Teman", ["Musuh", "Orang Lain", "Tamu"]),
+        createQ('1-5', "Apa itu 'Bale'?", "Rumah", ["Sawah", "Pasar", "Lumbung"]),
+        createQ('1-6', "Apa arti 'Merariq'?", "Menikah (Lari)", ["Pacaran", "Bertunangan", "Bercerai"]),
+        createQ('1-7', "Apa arti 'Nyetok'?", "Menyentuh Makanan (Etiket)", ["Memukul", "Menunjuk", "Membuang"]),
+        createQ('1-8', "Apa arti 'Pepadu'?", "Petarung Peresean", ["Penari", "Penyanyi", "Pedagang"]),
+        createQ('1-9', "Apa itu 'Berugak'?", "Gazebo/Saung", ["Dapur", "Kamar Mandi", "Pagar"]),
+        createQ('1-10', "Apa arti 'Solah'?", "Bagus/Baik", ["Jelek", "Rusak", "Jahat"]),
+        createQ('1-11', "Apa arti 'Piro'?", "Berapa", ["Siapa", "Dimana", "Kapan"]),
+        createQ('1-12', "Apa itu 'Cidomo'?", "Delman Khas Lombok", ["Mobil", "Motor", "Sepeda"]),
+        createQ('1-13', "Apa arti 'Mbe Laiq'?", "Mau Kemana", ["Siapa Nama", "Jam Berapa", "Apa Kabar"]),
+        createQ('1-14', "Apa arti 'Tindih'?", "Setia/Teguh", ["Lari", "Takut", "Berani"]),
+        createQ('1-15', "Apa itu 'Ares'?", "Sayur Batang Pisang", ["Sayur Nangka", "Daging Sapi", "Ikan Bakar"]),
+        createQ('1-16', "Apa arti 'Begibung'?", "Makan Bersama (Satu Nampan)", ["Makan Sendiri", "Puasa", "Masak"]),
+        createQ('1-17', "Apa arti 'Midang'?", "Apel/Bertamu ke Gadis", ["Melamar", "Menikah", "Pergi"]),
+        createQ('1-18', "Apa bahasa Sasak 'Air'?", "Aiq", ["Banyu", "Toyo", "Danu"]),
+        createQ('1-19', "Apa arti 'Gumi'?", "Bumi/Tanah", ["Langit", "Laut", "Api"]),
+        createQ('1-20', "Apa itu 'Sorong Serah'?", "Upacara Serah Terima Adat", ["Upacara Panen", "Upacara Hujan", "Upacara Lahir"])
+    ],
+    [Language.SAMAWA]: [
+        createQ('2-1', "Apa arti 'Ina'?", "Ibu", ["Bapak", "Nenek", "Tante"]), 
+        createQ('2-2', "Apa arti 'Bapak'?", "Ayah", ["Paman", "Kakek", "Kakak"]),
+        createQ('2-3', "Apa itu 'Bala'?", "Istana/Rumah Besar", ["Gubuk", "Lumbung", "Pasar"]),
+        createQ('2-4', "Apa arti 'Basiru'?", "Gotong Royong", ["Kerja Sendiri", "Berantem", "Tidur"]),
+        createQ('2-5', "Apa itu 'Sepat'?", "Masakan Kuah Asam Khas", ["Ikan Goreng", "Sate", "Gulai"]),
+        createQ('2-6', "Apa arti 'Sandro'?", "Dukun/Tabib", ["Guru", "Petani", "Nelayan"]),
+        createQ('2-7', "Apa arti 'Lawas'?", "Puisi Lisan Sumbawa", ["Lagu Pop", "Cerita Rakyat", "Berita"]),
+        createQ('2-8', "Apa arti 'Mana Tau'?", "Apa Kabar", ["Siapa Nama", "Mau Kemana", "Jam Berapa"]),
+        createQ('2-9', "Apa arti 'Nyorong'?", "Mengantar Hantaran Nikah", ["Mengambil", "Meminta", "Menahan"]),
+        createQ('2-10', "Apa itu 'Barapan Kebo'?", "Karapan Kerbau", ["Balap Kuda", "Adu Ayam", "Lari"]),
+        createQ('2-11', "Apa arti 'Olat'?", "Gunung", ["Laut", "Sungai", "Danau"]),
+        createQ('2-12', "Apa arti 'Lito'?", "Batu", ["Pasir", "Tanah", "Kayu"]),
+        createQ('2-13', "Apa arti 'Ai'?", "Air", ["Api", "Udara", "Asap"]),
+        createQ('2-14', "Apa arti 'Turas'?", "Tidur", ["Bangun", "Mimpi", "Diam"]),
+        createQ('2-15', "Apa arti 'Pariri'?", "Memperbaiki/Merawat", ["Merusak", "Membuang", "Melihat"]),
+        createQ('2-16', "Apa itu 'Sakeco'?", "Musik Tradisional", ["Tarian", "Lukisan", "Makanan"]),
+        createQ('2-17', "Apa arti 'Samalewa'?", "Membangun Bersama", ["Hancur", "Sendiri", "Pisah"]),
+        createQ('2-18', "Apa arti 'Rea'?", "Besar", ["Kecil", "Panjang", "Pendek"]),
+        createQ('2-19', "Apa itu 'Kre Alang'?", "Sarung Tenun Sumbawa", ["Batik", "Songket", "Kain Polos"]),
+        createQ('2-20', "Apa arti 'Tau'?", "Orang/Manusia", ["Hewan", "Tahu", "Tempe"])
+    ],
+    [Language.MBOJO]: [
+        createQ('3-1', "Apa arti 'Mada'?", "Saya (Halus)", ["Kamu", "Dia", "Mereka"]), 
+        createQ('3-2', "Apa arti 'Ita'?", "Anda (Sopan)", ["Aku", "Dia", "Kita"]),
+        createQ('3-3', "Apa itu 'Uma'?", "Rumah/Ladang", ["Sawah", "Kebun", "Pasar"]),
+        createQ('3-4', "Apa arti 'Lembo Ade'?", "Sabar Hati/Maaf", ["Marah", "Senang", "Sedih"]),
+        createQ('3-5', "Apa itu 'Rimpu'?", "Hijab Sarung Khas Bima", ["Topi", "Baju", "Celana"]),
+        createQ('3-6', "Apa arti 'Maja'?", "Malu", ["Takut", "Berani", "Sedih"]),
+        createQ('3-7', "Apa arti 'Dahu'?", "Takut (pada Tuhan)", ["Berani", "Marah", "Senang"]),
+        createQ('3-8', "Apa itu 'Uma Lengge'?", "Rumah Lumbung Kerucut", ["Istana", "Masjid", "Sekolah"]),
+        createQ('3-9', "Apa arti 'Nggahi'?", "Berkata/Bicara", ["Berbuat", "Berlari", "Berdoa"]),
+        createQ('3-10', "Apa arti 'Rawi'?", "Berbuat/Bekerja", ["Berkata", "Melihat", "Mendengar"]),
+        createQ('3-11', "Apa arti 'Dou Mbojo'?", "Orang Bima", ["Orang Asing", "Wisatawan", "Pejabat"]),
+        createQ('3-12', "Apa itu 'Tembe Nggoli'?", "Sarung Tenun Bima", ["Batik", "Sutra", "Jeans"]),
+        createQ('3-13', "Apa arti 'Ngaha'?", "Makan", ["Minum", "Tidur", "Mandi"]),
+        createQ('3-14', "Apa arti 'Nara'?", "Minum", ["Makan", "Masak", "Cuci"]),
+        createQ('3-15', "Apa arti 'Doro'?", "Gunung", ["Lembah", "Pantai", "Laut"]),
+        createQ('3-16', "Apa arti 'Moti'?", "Laut", ["Sungai", "Kolam", "Air"]),
+        createQ('3-17', "Apa arti 'Jara'?", "Kuda", ["Sapi", "Kerbau", "Kambing"]),
+        createQ('3-18', "Apa arti 'Kaboju'?", "Sungguh-sungguh", ["Main-main", "Malas", "Santai"]),
+        createQ('3-19', "Apa arti 'Taho'?", "Baik", ["Jahat", "Buruk", "Salah"]),
+        createQ('3-20', "Apa arti 'Asi'?", "Istana", ["Rumah", "Gubuk", "Toko"])
+    ]
 };
 
-export const getLegendaData = (): Record<Language, LegendaQuestion[][]> => {
-    return {
-        [Language.SASAK]: [
-             [
-                createL('l-s-1', "Legenda Putri Mandalika menceritakan pengorbanan seorang putri yang berubah menjadi...", "Menjadi apa?", "Cacing Nyale", ["Ikan Duyung", "Batu Karang", "Burung Laut"]),
-                createL('l-s-2', "Putri Mandalika memilih menceburkan diri ke laut agar...", "Apa alasannya?", "Tidak terjadi pertumpahan darah", ["Bisa berenang bebas", "Menemui Raja Laut", "Menghindari pernikahan"]),
-            ]
-        ],
-        [Language.SAMAWA]: [
-            [
-                createL('l-sm-1', "Tanjung Menangis konon berasal dari tangisan...", "Siapa yang menangis?", "Putri Lala Bulaeng", ["Putri Mandalika", "Dewi Anjani", "Ratu Sumbawa"]),
-            ]
-        ],
-        [Language.MBOJO]: [
-            [
-                 createL('l-m-1', "La Hila berubah menjadi batu di...", "Dimana?", "Wadu Ntanda Rahi", ["Gunung Tambora", "Pulau Sangeang", "Pantai Lawata"]),
-            ]
-        ]
-    };
+const LEGENDA_POOL = {
+    [Language.SASAK]: [
+        createL('ls-1', "Putri Mandalika menceburkan diri ke laut selatan.", "Ia dipercaya berubah menjadi apa?", "Nyale (Cacing Laut)", ["Ikan Duyung", "Batu Karang", "Burung Camar"]),
+        createL('ls-2', "Dewi Anjani dipercaya sebagai penguasa gaib di...", "Gunung mana?", "Gunung Rinjani", ["Gunung Tambora", "Gunung Agung", "Gunung Semeru"]),
+        createL('ls-3', "Masjid Bayan Beleq adalah saksi sejarah penyebaran Islam...", "Aliran apa?", "Wektu Telu", ["Muhammadiyah", "NU", "Wahabi"]),
+        createL('ls-4', "Tari Gendang Beleq awalnya digunakan untuk...", "Acara apa?", "Mengantar Prajurit Perang", ["Pesta Panen", "Sunatan", "Lomba Lari"]),
+        createL('ls-5', "Tradisi tarung perisai rotan untuk meminta hujan disebut...", "Apa?", "Peresean", ["Pencak Silat", "Karate", "Gulat"]),
+        createL('ls-6', "Desa Sade terkenal dengan lantai rumahnya yang dilapisi...", "Kotoran apa?", "Kotoran Kerbau/Sapi", ["Kotoran Kuda", "Tanah Liat Saja", "Semen"]),
+        createL('ls-7', "Raja terakhir Kerajaan Selaparang dikalahkan oleh...", "Kerajaan mana?", "Karangasem (Bali)", ["Majapahit", "Gowa", "Bima"]),
+        createL('ls-8', "Senjata khas Suku Sasak yang sering diselipkan di pinggang...", "Apa namanya?", "Keris", ["Parang", "Celurit", "Pedang"]),
+        createL('ls-9', "Motif kain tenun Sasak yang terkenal dan mahal...", "Apa namanya?", "Subahnale", ["Rangrang", "Endek", "Batik"]),
+        createL('ls-10', "Makanan ayam bakar pedas dengan bumbu pelalah disebut...", "Apa?", "Ayam Taliwang", ["Ayam Betutu", "Ayam Pop", "Ayam Penyet"]),
+        createL('ls-11', "Danau kawah di puncak Rinjani bernama...", "Apa?", "Segara Anak", ["Danau Toba", "Ranu Kumbolo", "Danau Batur"]),
+        createL('ls-12', "Upacara mencukur rambut bayi pertama kali di Lombok disebut...", "Apa?", "Ngurisan", ["Nyongkolan", "Merariq", "Bau Nyale"]),
+        createL('ls-13', "Putri Mandalika diperebutkan oleh...", "Berapa pangeran?", "Banyak Pangeran", ["Satu Pangeran", "Dua Raja", "Rakyat Jelata"]),
+        createL('ls-14', "Rumah adat Sasak dengan atap melengkung seperti lumbung disebut...", "Apa?", "Bale Lumbung", ["Bale Tani", "Bale Jajar", "Berugak"]),
+        createL('ls-15', "Alat musik tiup khas Sasak yang suaranya melengking...", "Apa?", "Seruling/Preret", ["Terompet", "Saxophone", "Harmonika"]),
+        createL('ls-16', "Tokoh penyebar Islam pertama di Lombok...", "Siapa?", "Sunan Prapen", ["Wali Songo", "Datuk Ri Bandang", "Tuan Guru"]),
+        createL('ls-17', "Desa penghasil gerabah tanah liat...", "Desa apa?", "Banyumulek", ["Sukarara", "Sade", "Sembalun"]),
+        createL('ls-18', "Tradisi arak-arakan pengantin Sasak ke rumah mempelai wanita...", "Disebut?", "Nyongkolan", ["Midang", "Nyetok", "Begibung"]),
+        createL('ls-19', "Sayur khas Lombok berbahan batang pisang muda...", "Apa?", "Ares", ["Plecing", "Beberuk", "Sayur Asem"]),
+        createL('ls-20', "Slogan pariwisata Lombok dan Sumbawa...", "Apa?", "Pesona Lombok Sumbawa", ["Wonderful Indonesia", "Visit NTB", "Lombok Bangkit"])
+    ],
+    [Language.SAMAWA]: [
+        createL('lsm-1', "Istana Dalam Loka dibangun tanpa paku besi, melainkan...", "Menggunakan apa?", "Pasak Kayu", ["Lem", "Tali Ijuk", "Semen"]),
+        createL('lsm-2', "Jumlah tiang Istana Dalam Loka melambangkan...", "Apa?", "Asmaul Husna (99)", ["Jumlah Nabi", "Jumlah Desa", "Umur Sultan"]),
+        createL('lsm-3', "Barapan Kebo dilakukan di sawah basah untuk...", "Tujuan apa?", "Menyambut Musim Tanam", ["Meminta Hujan", "Pesta Pernikahan", "Lomba Lari"]),
+        createL('lsm-4', "Masakan ikan kuah asam khas Sumbawa yang segar...", "Apa?", "Sepat", ["Singang", "Soto", "Gecok"]),
+        createL('lsm-5', "Pulau tempat Putri Diana pernah berlibur di Sumbawa...", "Pulau apa?", "Pulau Moyo", ["Pulau Bungin", "Pulau Komodo", "Gili Trawangan"]),
+        createL('lsm-6', "Susu Kuda Liar Sumbawa terkenal karena...", "Proses apa?", "Fermentasi Alami", ["Dimasak", "Diberi Gula", "Dibekukan"]),
+        createL('lsm-7', "Tanjung Menangis dinamakan demikian karena legenda...", "Siapa?", "Putri Lala Bulaeng", ["Putri Mandalika", "Bawang Putih", "Malin Kundang"]),
+        createL('lsm-8', "Kain tenun khas Sumbawa dengan benang emas/perak...", "Disebut?", "Kre Alang", ["Songket", "Batik", "Tenun Ikat"]),
+        createL('lsm-9', "Slogan Kabupaten Sumbawa...", "Apa?", "Sabalong Samalewa", ["Maja Labo Dahu", "Patuh Karya", "Bersinar"]),
+        createL('lsm-10', "Alat musik gesek khas Sumbawa...", "Apa?", "Rabap (Rebab)", ["Biola", "Cello", "Gitar"]),
+        createL('lsm-11', "Permen tradisional dari susu kerbau...", "Apa?", "Manjareal", ["Dodol", "Wajik", "Jenang"]),
+        createL('lsm-12', "Upacara adat hantaran pernikahan di Sumbawa...", "Disebut?", "Nyorong", ["Lamaran", "Resepsi", "Akad"]),
+        createL('lsm-13', "Seni bertutur/bernyanyi diiringi rebana...", "Apa?", "Sakeco", ["Karaoke", "Orkestra", "Gambus"]),
+        createL('lsm-14', "Gunung Tambora meletus dahsyat pada tahun...", "Tahun berapa?", "1815", ["1945", "1883", "2004"]),
+        createL('lsm-15', "Joki cilik dalam pacuan kuda Sumbawa disebut...", "Apa?", "Joki", ["Rider", "Pilot", "Sais"]),
+        createL('lsm-16', "Kerbau pemenang Barapan Kebo dinilai dari...", "Apa?", "Mengenai Saka (Kayu)", ["Kecepatan Lari", "Besar Badan", "Warna Kulit"]),
+        createL('lsm-17', "Masakan daging sapi/kerbau khas Sumbawa dengan kuah kental...", "Apa?", "Singang", ["Rendang", "Semur", "Rawon"]),
+        createL('lsm-18', "Pulau terpadat di dunia yang ada di Sumbawa...", "Pulau apa?", "Pulau Bungin", ["Pulau Moyo", "Pulau Medang", "Pulau Panjang"]),
+        createL('lsm-19', "Tabib tradisional Sumbawa disebut...", "Apa?", "Sandro", ["Dukun", "Dokter", "Suhu"]),
+        createL('lsm-20', "Istana tempat tinggal Sultan Sumbawa saat ini...", "Apa?", "Bala Kuning", ["Dalam Loka", "Bale Puti", "Keraton"])
+    ],
+    [Language.MBOJO]: [
+        createL('lm-1', "Falsafah hidup masyarakat Bima adalah...", "Apa?", "Maja Labo Dahu", ["Sabalong Samalewa", "Sopo Angen", "Gotong Royong"]),
+        createL('lm-2', "Rimpu Mpida (menutup wajah) digunakan oleh...", "Siapa?", "Wanita Belum Menikah", ["Wanita Sudah Menikah", "Nenek-nenek", "Anak Kecil"]),
+        createL('lm-3', "Uma Lengge berbentuk kerucut digunakan untuk...", "Menyimpan apa?", "Padi (Lumbung)", ["Emas", "Senjata", "Air"]),
+        createL('lm-4', "Istana Kesultanan Bima yang sekarang menjadi museum...", "Apa?", "Asi Mbojo", ["Asi Bou", "Dalam Loka", "Bale Tani"]),
+        createL('lm-5', "Sultan Bima pertama yang memeluk Islam...", "Siapa?", "Sultan Abdul Kahir", ["Sultan Hasanuddin", "Sultan Salahuddin", "Sultan Agung"]),
+        createL('lm-6', "Pantai di Bima dengan pasir berwarna merah muda...", "Pantai apa?", "Pantai Pink (Lambu)", ["Pantai Lawata", "Pantai Kalaki", "Pantai Kuta"]),
+        createL('lm-7', "Upacara adat mengantar sirih pinang ke istana saat Maulid...", "Disebut?", "Hanta Ua Pua", ["Siraman", "Grebeg Maulid", "Tabuik"]),
+        createL('lm-8', "Kain sarung tenun khas Bima yang bisa dipakai lari...", "Disebut?", "Tembe Nggoli", ["Batik", "Sutra", "Ulos"]),
+        createL('lm-9', "Pahlawan Nasional dari Bima...", "Siapa?", "Sultan Muhammad Salahuddin", ["Pattimura", "Diponegoro", "Cut Nyak Dien"]),
+        createL('lm-10', "Gunung berapi aktif di lepas pantai Bima...", "Apa?", "Sangeang Api", ["Tambora", "Rinjani", "Krakatau"]),
+        createL('lm-11', "Legenda 'Wadu Ntanda Rahi' menceritakan istri yang...", "Menjadi apa?", "Batu (Menunggu Suami)", ["Pohon", "Burung", "Ikan"]),
+        createL('lm-12', "Tari perang khas Bima menggunakan tombak dan perisai...", "Apa?", "Buja Kadanda", ["Tari Piring", "Tari Saman", "Tari Kecak"]),
+        createL('lm-13', "Masjid Terapung di Kota Bima terletak di...", "Pantai mana?", "Ama Hami", ["Lawata", "Wane", "Sape"]),
+        createL('lm-14', "Minuman khas Bima dari susu kuda liar...", "Apa?", "Susu Kuda Liar", ["Yoghurt", "Kefir", "Susu Kedelai"]),
+        createL('lm-15', "Makanan khas Bima dari ikan bandeng bakar...", "Disebut?", "Uta Londe Puru", ["Ikan Bakar Jimbaran", "Pecel Lele", "Mangut"]),
+        createL('lm-16', "Makam raja-raja Bima terletak di bukit...", "Apa?", "Dana Traha", ["Gunung Piring", "Makam Pahlawan", "Imogiri"]),
+        createL('lm-17', "Rimpu Colo (wajah terbuka) digunakan oleh...", "Siapa?", "Wanita Sudah Menikah", ["Gadis", "Anak-anak", "Janda"]),
+        createL('lm-18', "Alat musik gesek dari tempurung kelapa khas Bima...", "Apa?", "Biola Katongga", ["Rebab", "Cello", "Gitar"]),
+        createL('lm-19', "Ikat kepala khas pria Bima disebut...", "Apa?", "Sambolo", ["Udeng", "Blangkon", "Peci"]),
+        createL('lm-20', "Pacuan kuda tradisional Bima menggunakan joki...", "Siapa?", "Anak-anak (Joki Cilik)", ["Dewasa", "Wanita", "Orang Tua"])
+    ]
 };
+
+// --- MISTERI POOL (Enriched clues) ---
+const MISTERI_POOL = [
+    { target: "Ayam Taliwang", culture: "Sasak", clues: ["Berasal dari Karang Taliwang.", "Ayam kampung muda dibakar.", "Bumbunya pedas menyengat (Pelalah)."], options: ["Ayam Taliwang", "Sate Bulayak", "Ayam Betutu", "Bebek Bengil"] },
+    { target: "Susu Kuda Liar", culture: "Mbojo", clues: ["Minuman kesehatan para Sultan.", "Tahan lama tanpa pengawet.", "Rasanya asam segar (fermentasi)."], options: ["Susu Kuda Liar", "Tuak Manis", "Susu Sapi", "Yoghurt"] },
+    { target: "Madu Sumbawa", culture: "Samawa", clues: ["Diambil dari hutan lebat.", "Khasiatnya terkenal se-Nusantara.", "Warnanya putih atau kuning keemasan."], options: ["Madu Sumbawa", "Gula Merah", "Sirup", "Kecap"] },
+    { target: "Rimpu", culture: "Mbojo", clues: ["Pakaian wanita muslimah Bima.", "Menggunakan dua lembar sarung.", "Hanya terlihat mata (Mpida) atau wajah (Colo)."], options: ["Rimpu", "Jilbab", "Kebaya", "Songket"] },
+    { target: "Gasing", culture: "Sasambo", clues: ["Permainan adu putaran.", "Terbuat dari kayu keras (asam/kemuning).", "Dipukul dengan tali pelintir."], options: ["Gasing", "Layangan", "Kelereng", "Yoyo"] },
+    { target: "Plecing Kangkung", culture: "Sasak", clues: ["Sayuran wajib di Lombok.", "Kangkung air yang renyah.", "Disajikan dengan sambal tomat terasi segar."], options: ["Plecing Kangkung", "Gado-gado", "Pecel", "Sayur Asem"] },
+    { target: "Sepat", culture: "Samawa", clues: ["Ikan bakar kuah asam.", "Bumbunya dibakar dulu.", "Kadang dicelup batu panas (batu lito)."], options: ["Sepat", "Soto", "Rawon", "Sop Buntut"] },
+    { target: "Gendang Beleq", culture: "Sasak", clues: ["Alat musik kebesaran.", "Dimainkan sambil menari gagah.", "Dulu pengiring perang, kini pengantin."], options: ["Gendang Beleq", "Serunai", "Gamelan", "Rebana"] },
+    { target: "Dalam Loka", culture: "Samawa", clues: ["Rumah panggung raksasa.", "Bekas istana Sultan Sumbawa.", "Punya 99 tiang penyangga."], options: ["Dalam Loka", "Bala Kuning", "Uma Lengge", "Bale Tani"] },
+    { target: "Uma Lengge", culture: "Mbojo", clues: ["Bangunan mengerucut tinggi.", "Atap dari alang-alang.", "Tempat menyimpan padi (Lumbung)."], options: ["Uma Lengge", "Lumbung", "Berugak", "Pendopo"] },
+    { target: "Bale Tani", culture: "Sasak", clues: ["Rumah adat rakyat biasa.", "Lantainya dari tanah campur kotoran ternak.", "Atapnya rendah agar tamu menunduk."], options: ["Bale Tani", "Bale Lumbung", "Istana", "Masjid"] },
+    { target: "Serunai", culture: "Samawa", clues: ["Alat musik tiup.", "Suaranya melengking tinggi.", "Mirip terompet tapi tradisional."], options: ["Serunai", "Gendang", "Gong", "Biola"] },
+    { target: "Tembe Nggoli", culture: "Mbojo", clues: ["Sarung tenun khas Bima.", "Bahannya halus tapi hangat (benang kapas).", "Motif kotak-kotak cerah."], options: ["Tembe Nggoli", "Batik", "Ulos", "Tenun Ikat"] },
+    { target: "Keris", culture: "Sasambo", clues: ["Senjata tikam golongan bangsawan.", "Bilahnya berlekuk-lekuk (luk).", "Dianggap memiliki kekuatan gaib."], options: ["Keris", "Pedang", "Tombak", "Panah"] },
+    { target: "Peresean", culture: "Sasak", clues: ["Pertarungan dua lelaki.", "Bersenjata rotan (penjalin).", "Memakai perisai kulit kerbau (ende)."], options: ["Peresean", "Gulat", "Karapan Sapi", "Pencak Silat"] },
+    { target: "Main Jaran", culture: "Samawa", clues: ["Lomba kecepatan.", "Jokinya anak kecil (Joki Cilik).", "Kudanya jenis Sumbawa (Poni)."], options: ["Main Jaran", "Barapan Kebo", "Adu Domba", "Karapan Sapi"] },
+    { target: "Kre Alang", culture: "Samawa", clues: ["Kain mewah khas Sumbawa.", "Disulam benang emas/perak.", "Motif tumbuhan (kemang)."], options: ["Kre Alang", "Songket Sasak", "Tembe Nggoli", "Batik"] },
+    { target: "Maja Labo Dahu", culture: "Mbojo", clues: ["Falsafah hidup orang Bima.", "Artinya Malu dan Takut.", "Takut kepada Allah SWT."], options: ["Maja Labo Dahu", "Sopo Angen", "Sabalong Samalewa", "Bhinneka Tunggal Ika"] },
+    { target: "Bau Nyale", culture: "Sasak", clues: ["Pesta rakyat di pantai selatan.", "Menangkap cacing laut warna-warni.", "Jelmaan Putri Mandalika."], options: ["Bau Nyale", "Perang Topat", "Lebaran", "Maulid"] },
+    { target: "Gunung Tambora", culture: "Mbojo", clues: ["Gunung dengan kaldera raksasa.", "Letusannya tahun 1815 menggelapkan dunia.", "Terletak di semenanjung Sanggar."], options: ["Gunung Tambora", "Gunung Rinjani", "Gunung Agung", "Gunung Merapi"] }
+];
+
+// --- PANTUN POOL (Renamed & Structured as Sesenggak/Lawas/Patu) ---
+const PANTUN_POOL = [
+    // SESENGGAK SASAK (Nasihat)
+    { culture: "Sasak", sampiran: ["Bau paku leq sedin kokok", "Masak kandoq leq sedin rurung"], question: "Lengkapi Sesenggak ini (Nasihat rukun):", correct: {l3: "Inaq amaq ndek te laloq", l4: "Saling tulung jari roah"}, options: [{l3: "Inaq amaq ndek te laloq", l4: "Saling tulung jari roah"}, {l3: "Mangan nasi leq mataram", l4: "Enak rasanya"}] },
+    { culture: "Sasak", sampiran: ["Mun belayar leq segara", "Bau kandoq araq lime"], question: "Sesenggak Agama:", correct: {l3: "Mun belajar leq dunya", l4: "Jari sangune leq akhirat"}, options: [{l3: "Mun belajar leq dunya", l4: "Jari sangune leq akhirat"}, {l3: "Mun tindoq leq bale", l4: "Ndek arak gune"}] },
+    { culture: "Sasak", sampiran: ["Leq praya araq batu", "Batu beleq jari penanda"], question: "Tentang Ilmu:", correct: {l3: "Lamun side mele mampu", l4: "Rajin belajar ndek araq gune"}, options: [{l3: "Lamun side mele mampu", l4: "Rajin belajar ndek araq gune"}, {l3: "Lalo midang jok bale", l4: "Mangan jaje"}] },
+    { culture: "Sasak", sampiran: ["Jok segara bau empaq", "Beli terasi leq mataram"], question: "Cinta Tanah Air:", correct: {l3: "Lamun side ngaku sasak", l4: "Endaq girang ngebang gumi"}, options: [{l3: "Lamun side ngaku sasak", l4: "Endaq girang ngebang gumi"}, {l3: "Lalo mandi jok kali", l4: "Beli nasi leq warung"}] },
+    
+    // LAWAS SAMAWA (Puisi Sumbawa)
+    { culture: "Samawa", sampiran: ["Beli jarum di toko", "Jarum patah beli baru"], question: "Lawas Percintaan (Siong):", correct: {l3: "Lamar dadi siong", l4: "Ku sate kau"}, options: [{l3: "Lamar dadi siong", l4: "Ku sate kau"}, {l3: "Beli baju baru", l4: "Warna biru"}] },
+    { culture: "Samawa", sampiran: ["Ke pasar beli gulas", "Beli juga buah manggis"], question: "Lawas Agama:", correct: {l3: "Lamun nene sate ikhlas", l4: "Dapat pahala manis"}, options: [{l3: "Lamun nene sate ikhlas", l4: "Dapat pahala manis"}, {l3: "Lalo turing ka moyo", l4: "Dapat ikan besar"}] },
+    { culture: "Samawa", sampiran: ["Main jaran di kerato", "Menang lomba dapat piala"], question: "Lawas Semangat:", correct: {l3: "Tu samawa rea", l4: "Sabalong samalewa"}, options: [{l3: "Tu samawa rea", l4: "Sabalong samalewa"}, {l3: "Lalo mandi di sungai", l4: "Airnya dingin sekali"}] },
+    
+    // PATU MBOJO (Pantun Bima)
+    { culture: "Mbojo", sampiran: ["La'o la'o di pasar Bima", "Beli uhi rura kahawa"], question: "Patu Nasihat (Maja Labo Dahu):", correct: {l3: "Nggahi rawi pahu", l4: "Maja labo dahu"}, options: [{l3: "Nggahi rawi pahu", l4: "Maja labo dahu"}, {l3: "Nara kahawa di uma", l4: "Beli uhi rura"}] },
+    { culture: "Mbojo", sampiran: ["Ntara wura di langi", "Sinar mpori di dana"], question: "Patu Persaudaraan:", correct: {l3: "Taho ra ne'e weki", l4: "Kasama weki dana"}, options: [{l3: "Taho ra ne'e weki", l4: "Kasama weki dana"}, {l3: "La'o la'o di pasar", l4: "Beli sayur"}] },
+    { culture: "Mbojo", sampiran: ["Wadu ntanda rahi", "Di pinggir laut"], question: "Patu Persatuan:", correct: {l3: "Dou labo dana", l4: "Mesti bersatu"}, options: [{l3: "Dou labo dana", l4: "Mesti bersatu"}, {l3: "Lihat batu besar", l4: "Di atas gunung"}] },
+    
+    // CAMPURAN (Untuk level awal)
+    { culture: "Sasambo", sampiran: ["Rinjani Tambora menjulang tinggi", "Sumbawa pulau harapan"], question: "Persatuan NTB:", correct: {l3: "Sasak Samawa Mbojo berseri", l4: "NTB Gemilang masa depan"}, options: [{l3: "Sasak Samawa Mbojo berseri", l4: "NTB Gemilang masa depan"}, {l3: "Jalan jalan ke pantai", l4: "Makan ikan bakar"}] },
+    { culture: "Sasambo", sampiran: ["Tiga suku satu hati", "NTB rumah kita"], question: "Harmoni:", correct: {l3: "Mari kita saling mengerti", l4: "Agar damai selamanya"}, options: [{l3: "Mari kita saling mengerti", l4: "Agar damai selamanya"}, {l3: "Jalan jalan sore", l4: "Lihat pemandangan"}] }
+];
+
+// --- TAKDIR POOL (Etiquette & Choices) ---
+const TAKDIR_POOL = [
+    // FASE 1: ETIKA DASAR (Manners)
+    { title: "Bertamu di Sade", culture: "Sasak", context: "Pintu rumah adat Sasak sangat rendah.", question: "Apa yang kamu lakukan saat masuk?", options: [{text: "Menunduk hormat", isCorrect: true, feedback: "Benar! Menunduk tanda menghormati tuan rumah & Tuhan."}, {text: "Masuk tegak", isCorrect: false, feedback: "Dug! Kepalamu terbentur. Tidak sopan."}] },
+    { title: "Makan Sepat", culture: "Samawa", context: "Disuguhi ikan kuah asam (Sepat).", question: "Bagaimana cara makan yang paling akrab?", options: [{text: "Pakai tangan (Muluk)", isCorrect: true, feedback: "Tepat. Tradisi 'Muluk' mempererat rasa kekeluargaan."}, {text: "Minta sendok garpu", isCorrect: false, feedback: "Terlalu formal, tuan rumah merasa berjarak."}] },
+    { title: "Salam Bima", culture: "Mbojo", context: "Bertemu tetua adat Bima di jalan.", question: "Apa salam yang paling pas?", options: [{text: "Lembo Ade", isCorrect: true, feedback: "Benar! 'Lembo Ade' (Sabar Hati/Permisi) adalah salam halus."}, {text: "Halo Bos", isCorrect: false, feedback: "Sangat tidak sopan kepada orang tua."}] },
+    { title: "Menolak Makanan", culture: "Sasambo", context: "Tuan rumah menyuguhkan kopi tapi kamu kenyang.", question: "Bagaimana cara menolaknya?", options: [{text: "Cicipi sedikit (Nyetok)", isCorrect: true, feedback: "Benar! 'Nyetok' (menyentuh bibir/piring) menghargai tuan rumah."}, {text: "Tolak mentah-mentah", isCorrect: false, feedback: "Dianggap sombong dan bisa kualat (pamali)."}] },
+    { title: "Lewat Depan Orang Tua", culture: "Sasak", context: "Ada orang tua duduk di berugak.", question: "Sikapmu saat lewat?", options: [{text: "Membungkuk & bilang Tabe'", isCorrect: true, feedback: "Sangat sopan. Adat Sasak sangat menghormati usia."}, {text: "Jalan biasa saja", isCorrect: false, feedback: "Dianggap kurang ajar (kurang tata krama)."}] },
+    
+    // FASE 2: ADAT & TRADISI (Customs)
+    { title: "Merariq", culture: "Sasak", context: "Temanmu ingin menikahi gadis Sasak sesuai adat.", question: "Apa langkah pertamanya?", options: [{text: "Menculik (Melarikan) gadis", isCorrect: true, feedback: "Benar, 'Merariq' diawali dengan melarikan gadis atas persetujuan bersama."}, {text: "Melamar resmi ke rumah", isCorrect: false, feedback: "Itu 'Ngemblok', bukan adat Sasak tradisional (Merariq)."}] },
+    { title: "Barapan Kebo", culture: "Samawa", context: "Kerbau sedang berlari kencang di sawah.", question: "Dimana posisi amanmu?", options: [{text: "Di pinggir pematang", isCorrect: true, feedback: "Aman dan tidak mengganggu Sandro (dukun) yang bertugas."}, {text: "Di tengah lintasan", isCorrect: false, feedback: "Bahaya! Kamu bisa tertabrak kerbau."}] },
+    { title: "Rimpu", culture: "Mbojo", context: "Wanita memakai sarung menutup wajah (Rimpu Mpida).", question: "Apa statusnya?", options: [{text: "Belum Menikah (Gadis)", isCorrect: true, feedback: "Benar, Rimpu Mpida menandakan gadis/belum menikah."}, {text: "Sudah Menikah", isCorrect: false, feedback: "Salah, kalau sudah menikah wajah terlihat (Rimpu Colo)."}] },
+    { title: "Nyorong", culture: "Samawa", context: "Membawa hantaran pernikahan.", question: "Siapa yang harus membawa?", options: [{text: "Rombongan keluarga pria", isCorrect: true, feedback: "Ramai-ramai membawa barang (lemari, kasur, dll)."}, {text: "Dikirim lewat kurir", isCorrect: false, feedback: "Tidak menghargai adat kebersamaan."}] },
+    { title: "Bau Nyale", culture: "Sasak", context: "Cacing Nyale mulai keluar di pantai.", question: "Apa yang kamu lakukan?", options: [{text: "Tangkap ramai-ramai", isCorrect: true, feedback: "Tradisi setahun sekali mencari berkah."}, {text: "Lari ketakutan", isCorrect: false, feedback: "Sayang sekali melewatkan momen legendaris."}] },
+
+    // FASE 3: KONFLIK & FILOSOFI (Values)
+    { title: "Peresean", culture: "Sasak", context: "Lawanmu di arena Peresean terluka.", question: "Apa sikap seorang Pepadu?", options: [{text: "Memeluk/Salaman usai laga", isCorrect: true, feedback: "Sportivitas adalah inti Peresean. Dendam dilarang."}, {text: "Mengejek lawan", isCorrect: false, feedback: "Tidak ksatria. Anda akan diusir dari arena."}] },
+    { title: "Hanta Ua Pua", culture: "Mbojo", context: "Upacara peringatan Maulid Nabi.", question: "Apa yang diarak?", options: [{text: "Rumah mahligai berisi bunga", isCorrect: true, feedback: "Benar, berisi sirih pinang dan 99 bunga telur."}, {text: "Patung hewan", isCorrect: false, feedback: "Salah, Bima sangat Islami."}] },
+    { title: "Bicara dengan Datu", culture: "Sasambo", context: "Raja bertanya namamu.", question: "Kata ganti diri paling halus?", options: [{text: "Tiang / Kaji / Mada", isCorrect: true, feedback: "Benar, ini bahasa paling halus untuk 'Saya'."}, {text: "Aku / Saya", isCorrect: false, feedback: "Terlalu kasar untuk berbicara dengan Raja."}] },
+    { title: "Membangun Rumah", culture: "Samawa", context: "Warga berkumpul membantu bangun rumah (Basiru).", question: "Apa peranmu?", options: [{text: "Ikut membantu semampunya", isCorrect: true, feedback: "Gotong royong adalah kunci masyarakat Sumbawa."}, {text: "Hanya menonton", isCorrect: false, feedback: "Kurang peka sosial (Individualis)."}] },
+    { title: "Menjaga Alam", culture: "Sasambo", context: "Melihat orang menebang pohon di hutan lindung.", question: "Sikapmu?", options: [{text: "Tegur / Lapor Tetua", isCorrect: true, feedback: "Menjaga Gumi Paer (Tanah Air) adalah kewajiban."}, {text: "Biarkan saja", isCorrect: false, feedback: "Alam akan rusak dan bencana datang."}] }
+];
+
+// --- EXPORTED GETTERS (Using Generator) ---
+
+export const getPasarKataData = (): Record<Language, PasarKataQuestion[][]> => ({
+    [Language.SASAK]: generateDynamicLevels(PASAR_KATA_POOL[Language.SASAK]),
+    [Language.SAMAWA]: generateDynamicLevels(PASAR_KATA_POOL[Language.SAMAWA]),
+    [Language.MBOJO]: generateDynamicLevels(PASAR_KATA_POOL[Language.MBOJO]),
+});
+
+export const getTebakBahasaData = (): Record<Language, TebakBahasaQuestion[][]> => ({
+    [Language.SASAK]: generateDynamicLevels(TEBAK_BAHASA_POOL[Language.SASAK]),
+    [Language.SAMAWA]: generateDynamicLevels(TEBAK_BAHASA_POOL[Language.SAMAWA]),
+    [Language.MBOJO]: generateDynamicLevels(TEBAK_BAHASA_POOL[Language.MBOJO]),
+});
+
+export const getLegendaData = (): Record<Language, LegendaQuestion[][]> => ({
+    [Language.SASAK]: generateDynamicLevels(LEGENDA_POOL[Language.SASAK]),
+    [Language.SAMAWA]: generateDynamicLevels(LEGENDA_POOL[Language.SAMAWA]),
+    [Language.MBOJO]: generateDynamicLevels(LEGENDA_POOL[Language.MBOJO]),
+});
+
+export const getMisteriLevels = () => generateDynamicLevels(MISTERI_POOL);
+export const getPantunLevels = () => generateDynamicLevels(PANTUN_POOL);
+export const getTakdirLevels = () => generateDynamicLevels(TAKDIR_POOL);

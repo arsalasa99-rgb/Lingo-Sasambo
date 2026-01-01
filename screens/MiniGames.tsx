@@ -4,7 +4,15 @@ import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, CheckCircle2, Grid, Music, Book, Play, Lock, Star, Search, Check, XCircle, Sparkles, Compass, GripHorizontal, X, Heart, ThumbsUp, ThumbsDown, Zap, Crown } from 'lucide-react';
 import { GlassCard, LiquidButton } from '../components/GlassUI';
 import { GameActions, UserProfile, Language, InventoryItem, ItemRarity } from '../types';
-import { getPasarKataData, getTebakBahasaData, getLegendaData, MASTER_INVENTORY } from '../gameData';
+import { 
+    getPasarKataData, 
+    getTebakBahasaData, 
+    getLegendaData, 
+    getMisteriLevels, 
+    getPantunLevels, 
+    getTakdirLevels,
+    MASTER_INVENTORY 
+} from '../gameData';
 import { PasarKataQuestion, TebakBahasaQuestion, LegendaQuestion } from '../types';
 
 interface MiniGamesProps {
@@ -31,148 +39,7 @@ enum ViewState {
     RESULT = 'RESULT'
 }
 
-// --- EXPANDED GAME DATA GENERATORS (10 LEVELS) ---
-
-const getMisteriLevels = () => {
-    // Helper to create a level set
-    const createLevel = (items: any[]) => items;
-    return [
-        // Level 1: Makanan Ikonik (Easy)
-        createLevel([
-            { target: "Ayam Taliwang", culture: "Sasak", clues: ["Makanan pedas.", "Ayam kampung bakar.", "Bumbu pelalah."], options: ["Ayam Taliwang", "Sate Bulayak", "Ayam Betutu", "Bebek Bengil"] }
-        ]),
-        // Level 2: Minuman Khas (Easy)
-        createLevel([
-            { target: "Susu Kuda Liar", culture: "Mbojo", clues: ["Minuman putih.", "Dari hewan pacuan.", "Fermentasi alami."], options: ["Susu Kuda Liar", "Tuak Manis", "Susu Sapi", "Yoghurt"] }
-        ]),
-        // Level 3: Busana Adat (Easy)
-        createLevel([
-            { target: "Rimpu", culture: "Mbojo", clues: ["Menggunakan sarung.", "Menutup kepala wanita.", "Seperti hijab tradisional."], options: ["Rimpu", "Jilbab", "Kebaya", "Songket"] }
-        ]),
-        // Level 4: Alat Musik (Medium)
-        createLevel([
-            { target: "Gendang Beleq", culture: "Sasak", clues: ["Alat musik pukul.", "Ukurannya sangat besar.", "Dimainkan berkelompok."], options: ["Gendang Beleq", "Serunai", "Gamelan", "Rebana"] }
-        ]),
-        // Level 5: Arsitektur (Medium)
-        createLevel([
-            { target: "Dalam Loka", culture: "Samawa", clues: ["Bangunan kayu raksasa.", "Bekas istana sultan.", "Bertopang 99 tiang."], options: ["Dalam Loka", "Bala Kuning", "Uma Lengge", "Bale Tani"] }
-        ]),
-        // Level 6: Tempat Penyimpanan (Medium)
-        createLevel([
-            { target: "Uma Lengge", culture: "Mbojo", clues: ["Bentuknya mengerucut.", "Atap alang-alang.", "Tempat simpan padi."], options: ["Uma Lengge", "Lumbung", "Berugak", "Pendopo"] }
-        ]),
-        // Level 7: Tradisi Pertarungan (Hard)
-        createLevel([
-            { target: "Peresean", culture: "Sasak", clues: ["Adu ketangkasan.", "Memakai rotan dan perisai.", "Meminta hujan."], options: ["Peresean", "Gulat", "Karapan Sapi", "Pencak Silat"] }
-        ]),
-        // Level 8: Tradisi Hewan (Hard)
-        createLevel([
-            { target: "Main Jaran", culture: "Samawa", clues: ["Joki cilik.", "Kecepatan tinggi.", "Hewan Poni Sumbawa."], options: ["Main Jaran", "Barapan Kebo", "Adu Domba", "Karapan Sapi"] }
-        ]),
-        // Level 9: Kain Tenun (Hard)
-        createLevel([
-            { target: "Kre Alang", culture: "Samawa", clues: ["Benang emas/perak.", "Motif tumbuhan/hewan.", "Kain khas Sumbawa."], options: ["Kre Alang", "Songket Sasak", "Tembe Nggoli", "Batik"] }
-        ]),
-        // Level 10: Filosofi (Expert)
-        createLevel([
-            { target: "Maja Labo Dahu", culture: "Mbojo", clues: ["Malu berbuat salah.", "Takut kepada Tuhan.", "Pedoman hidup Bima."], options: ["Maja Labo Dahu", "Sopo Angen", "Sabalong Samalewa", "Bhinneka Tunggal Ika"] }
-        ])
-    ];
-};
-
-const getPantunLevels = () => {
-    const createLevel = (items: any[]) => items;
-    return [
-        // Level 1: Sasak (Simple Rhyme -aq)
-        createLevel([ 
-            { culture: "Sasak", sampiran: ["Jok segara bau empaq", "Beli terasi leq mataram"], question: "Cari rima A-B-A-B (Akhiran -ak/-am)", correct: {l3: "Lamun side ngaku sasak", l4: "Endaq girang ngebang gumi"}, options: [{l3: "Lamun side ngaku sasak", l4: "Endaq girang ngebang gumi"}, {l3: "Lalo mandi jok kali", l4: "Beli nasi leq warung"}] }
-        ]),
-        // Level 2: Samawa (Simple Rhyme -as)
-        createLevel([
-            { culture: "Samawa", sampiran: ["Ke pasar beli gulas", "Beli juga buah manggis"], question: "Rima Ikhlas - Manis", correct: {l3: "Lamun nene sate ikhlas", l4: "Dapat pahala manis"}, options: [{l3: "Lamun nene sate ikhlas", l4: "Dapat pahala manis"}, {l3: "Lalo turing ka moyo", l4: "Dapat ikan besar"}] }
-        ]),
-        // Level 3: Mbojo (Simple Rhyme -u)
-        createLevel([
-            { culture: "Mbojo", sampiran: ["La'o la'o di pasar Bima", "Beli uhi rura kahawa"], question: "Rima Pahu - Dahu", correct: {l3: "Nggahi rawi pahu", l4: "Maja labo dahu"}, options: [{l3: "Nggahi rawi pahu", l4: "Maja labo dahu"}, {l3: "Nara kahawa di uma", l4: "Beli uhi rura"}] }
-        ]),
-        // Level 4: Sasak (Advice -e)
-        createLevel([
-            { culture: "Sasak", sampiran: ["Mun belayar leq segara", "Bau kandoq araq lime"], question: "Rima A-A-A-A (Vokal e/a)", correct: {l3: "Mun belajar leq dunya", l4: "Jari sangune leq akhirat"}, options: [{l3: "Mun belajar leq dunya", l4: "Jari sangune leq akhirat"}, {l3: "Mun tindoq leq bale", l4: "Ndek arak gune"}] }
-        ]),
-        // Level 5: Samawa (Love -ar)
-        createLevel([
-            { culture: "Samawa", sampiran: ["Beli jarum di toko", "Jarum patah beli baru"], question: "Rima Toko - Baru", correct: {l3: "Lamar dadi siong", l4: "Ku sate kau"}, options: [{l3: "Lamar dadi siong", l4: "Ku sate kau"}, {l3: "Beli baju baru", l4: "Warna biru"}] }
-        ]),
-        // Level 6: Mbojo (Social -a)
-        createLevel([
-            { culture: "Mbojo", sampiran: ["Ntara wura di langi", "Sinar mpori di dana"], question: "Rima i - a", correct: {l3: "Taho ra ne'e weki", l4: "Kasama weki dana"}, options: [{l3: "Taho ra ne'e weki", l4: "Kasama weki dana"}, {l3: "La'o la'o di pasar", l4: "Beli sayur"}] }
-        ]),
-        // Level 7: Sasak (Philosophy -i)
-        createLevel([
-            { culture: "Sasak", sampiran: ["Bau paku leq sedin kokok", "Masak kandoq leq sedin rurung"], question: "Rima o - u", correct: {l3: "Inaq amaq ndek te laloq", l4: "Saling tulung jari roah"}, options: [{l3: "Inaq amaq ndek te laloq", l4: "Saling tulung jari roah"}, {l3: "Mangan nasi leq mataram", l4: "Enak rasanya"}] }
-        ]),
-        // Level 8: Samawa (Heroism)
-        createLevel([
-            { culture: "Samawa", sampiran: ["Main jaran di kerato", "Menang lomba dapat piala"], question: "Rima o - a", correct: {l3: "Tu samawa rea", l4: "Sabalong samalewa"}, options: [{l3: "Tu samawa rea", l4: "Sabalong samalewa"}, {l3: "Lalo mandi di sungai", l4: "Airnya dingin sekali"}] }
-        ]),
-        // Level 9: Mbojo (Values)
-        createLevel([
-            { culture: "Mbojo", sampiran: ["Wadu ntanda rahi", "Di pinggir laut"], question: "Rima i - ut", correct: {l3: "Dou labo dana", l4: "Mesti bersatu"}, options: [{l3: "Dou labo dana", l4: "Mesti bersatu"}, {l3: "Lihat batu besar", l4: "Di atas gunung"}] }
-        ]),
-        // Level 10: Sasambo Mix (Unity)
-        createLevel([
-            { culture: "Sasambo", sampiran: ["Rinjani Tambora menjulang tinggi", "Sumbawa pulau harapan"], question: "Rima i - an", correct: {l3: "Sasak Samawa Mbojo berseri", l4: "NTB Gemilang masa depan"}, options: [{l3: "Sasak Samawa Mbojo berseri", l4: "NTB Gemilang masa depan"}, {l3: "Jalan jalan ke pantai", l4: "Makan ikan bakar"}] }
-        ]),
-    ];
-};
-
-const getTakdirLevels = () => {
-    const createLevel = (items: any[]) => items;
-    return [
-        // Level 1: Bertamu (Easy)
-        createLevel([ 
-            { title: "Bertamu di Sade", culture: "Sasak", context: "Pintu rumah adat Sasak sangat rendah.", question: "Apa yang kamu lakukan?", options: [{text: "Menunduk hormat", isCorrect: true, feedback: "Benar! Menunduk tanda menghormati tuan rumah."}, {text: "Masuk tegak", isCorrect: false, feedback: "Dug! Kepalamu terbentur. Tidak sopan."}] }
-        ]),
-        // Level 2: Makan (Easy)
-        createLevel([
-            { title: "Makan Sepat", culture: "Samawa", context: "Disuguhi ikan kuah asam (Sepat).", question: "Cara makan yang sopan?", options: [{text: "Pakai tangan (Muluk)", isCorrect: true, feedback: "Tepat. Tradisi 'Muluk' mempererat rasa."}, {text: "Minta sendok", isCorrect: false, feedback: "Kurang luwes, tuan rumah mungkin bingung."}] }
-        ]),
-        // Level 3: Menyapa (Easy)
-        createLevel([
-            { title: "Salam Bima", culture: "Mbojo", context: "Bertemu tetua adat Bima di jalan.", question: "Salam yang pas?", options: [{text: "Lembo Ade", isCorrect: true, feedback: "Salam halus khas Bima."}, {text: "Halo Bos", isCorrect: false, feedback: "Sangat tidak sopan."}] }
-        ]),
-        // Level 4: Pernikahan (Medium)
-        createLevel([
-            { title: "Merariq", culture: "Sasak", context: "Temanmu ingin menikahi gadis Sasak sesuai adat.", question: "Apa langkah pertamanya?", options: [{text: "Menculik (Melarikan) gadis", isCorrect: true, feedback: "Benar, 'Merariq' diawali dengan melarikan gadis atas persetujuan bersama."}, {text: "Melamar resmi ke rumah", isCorrect: false, feedback: "Itu adat umum, bukan adat Sasak tradisional."}] }
-        ]),
-        // Level 5: Etika Menonton (Medium)
-        createLevel([
-            { title: "Barapan Kebo", culture: "Samawa", context: "Kerbau sedang berlari kencang di sawah.", question: "Dimana kamu berdiri?", options: [{text: "Di pinggir pematang aman", isCorrect: true, feedback: "Aman dan tidak mengganggu Sandro (dukun)."}, {text: "Di tengah lintasan", isCorrect: false, feedback: "Bahaya! Kamu bisa tertabrak."}] }
-        ]),
-        // Level 6: Berpakaian (Medium)
-        createLevel([
-            { title: "Rimpu", culture: "Mbojo", context: "Seorang wanita memakai sarung menutup wajah (Rimpu Mpida).", question: "Apa statusnya?", options: [{text: "Belum Menikah", isCorrect: true, feedback: "Benar, hanya mata yang terlihat."}, {text: "Sudah Menikah", isCorrect: false, feedback: "Salah, kalau sudah menikah wajah terlihat (Rimpu Colo)."}] }
-        ]),
-        // Level 7: Konflik (Hard)
-        createLevel([
-            { title: "Peresean", culture: "Sasak", context: "Lawanmu di arena Peresean terluka.", question: "Sikapmu?", options: [{text: "Memeluk/Salaman setelah laga", isCorrect: true, feedback: "Sportivitas adalah inti Peresean."}, {text: "Mengejek lawan", isCorrect: false, feedback: "Tidak ksatria. Anda diusir dari arena."}] }
-        ]),
-        // Level 8: Hadiah (Hard)
-        createLevel([
-            { title: "Nyorong", culture: "Samawa", context: "Membawa hantaran pernikahan.", question: "Siapa yang harus membawa?", options: [{text: "Rombongan keluarga pria", isCorrect: true, feedback: "Ramai-ramai membawa barang."}, {text: "Dikirim lewat kurir", isCorrect: false, feedback: "Tidak menghargai adat."}] }
-        ]),
-        // Level 9: Upacara (Expert)
-        createLevel([
-            { title: "Hanta Ua Pua", culture: "Mbojo", context: "Upacara peringatan Maulid Nabi.", question: "Apa yang diarak?", options: [{text: "Rumah mahligai berisi bunga", isCorrect: true, feedback: "Benar, berisi sirih pinang dan bunga telur."}, {text: "Patung hewan", isCorrect: false, feedback: "Salah."}] }
-        ]),
-        // Level 10: Bahasa Halus (Expert)
-        createLevel([
-            { title: "Bicara dengan Datu", culture: "Sasambo", context: "Raja bertanya namamu.", question: "Jawaban paling halus?", options: [{text: "Tiang / Kaji / Mada", isCorrect: true, feedback: "Kata ganti 'Saya' yang paling halus."}, {text: "Aku / Saya", isCorrect: false, feedback: "Terlalu kasar untuk Raja."}] }
-        ]),
-    ];
-};
-
-// ... (KEEPING RENDER COMPONENTS: MisteriSasamboLevel, PantunHypeLevel, TakdirBebasLevel) ...
+// ... (KEEPING RENDER COMPONENTS: MisteriSasamboLevel, PantunHypeLevel, TakdirBebasLevel, etc.) ...
 const MisteriSasamboLevel: React.FC<{ item: any, onWin: (won: boolean) => void }> = ({ item, onWin }) => {
     const [currentClueIdx, setCurrentClueIdx] = useState(0);
     const [showResult, setShowResult] = useState<'correct'|'wrong'|null>(null);
@@ -575,7 +442,6 @@ const ResultModal: React.FC<{ status: 'correct' | 'wrong' | 'reward', message?: 
     );
 };
 
-// --- PASAR KATA, TEBAK BAHASA, LEGENDA (Fixed Layouts) ---
 const PasarKataLevel: React.FC<{ item: PasarKataQuestion, onWin: (won: boolean) => void }> = ({ item, onWin }) => {
     const [selectedWords, setSelectedWords] = useState<string[]>([]);
     const [availableWords, setAvailableWords] = useState<string[]>([]);

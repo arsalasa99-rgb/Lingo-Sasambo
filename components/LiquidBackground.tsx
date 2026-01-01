@@ -1,8 +1,9 @@
+
 import React from 'react';
 
 const LiquidBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-sasambo-dark to-[#3E2723] text-sasambo-cream">
+    <div className="fixed inset-0 w-full h-full overflow-hidden bg-gradient-to-b from-sasambo-dark to-[#3E2723] text-sasambo-cream">
       {/* Animated Earthy Orbs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-sasambo-primary mix-blend-overlay filter blur-3xl opacity-60 animate-blob rounded-full"></div>

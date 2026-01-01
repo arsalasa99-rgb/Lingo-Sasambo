@@ -37,7 +37,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         transition={{ duration: 1, type: "spring", stiffness: 100 }}
         className="relative z-10"
       >
-        {/* Frame / Container Logo - INCREASED SIZE, REMOVED PADDING */}
+        {/* Frame / Container Logo */}
         <div className="w-48 h-48 sm:w-64 sm:h-64 mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-2xl flex items-center justify-center p-0 mb-8 relative overflow-hidden group">
             {/* Inner Shine Effect */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
@@ -91,9 +91,9 @@ const Onboarding = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   return (
-    <div className="h-full flex flex-col justify-between relative overflow-hidden">
-      {/* Content Area - Scrollable if content is too tall */}
-      <div className="flex-1 overflow-y-auto px-6 pt-10 pb-4 flex flex-col items-center justify-center min-h-0">
+    <div className="w-full h-full flex flex-col relative overflow-hidden">
+      {/* Content Area - Scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 flex flex-col items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={idx}
@@ -102,9 +102,9 @@ const Onboarding = ({ onComplete }: { onComplete: () => void }) => {
             exit={{ x: -50, opacity: 0 }}
             className="text-center w-full flex flex-col items-center"
           >
-            {/* Conditional Rendering: Image Frame vs Emoji - Responsive Sizing */}
+            {/* Image Frame - Smaller on Mobile to fit Button */}
             {slides[idx].image ? (
-               <div className="w-48 h-48 sm:w-64 sm:h-64 mx-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-2xl flex items-center justify-center p-4 mb-6 relative overflow-hidden group flex-shrink-0">
+               <div className="w-40 h-40 sm:w-64 sm:h-64 mx-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-2xl flex items-center justify-center p-4 mb-6 relative overflow-hidden group flex-shrink-0">
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
                   <img 
                     src={slides[idx].image} 
@@ -122,9 +122,9 @@ const Onboarding = ({ onComplete }: { onComplete: () => void }) => {
         </AnimatePresence>
       </div>
 
-      {/* Footer / Buttons Area - Fixed at bottom */}
-      <div className="w-full p-6 pt-0 bg-transparent flex-shrink-0 z-10 flex flex-col gap-5">
-        <div className="flex justify-center gap-2">
+      {/* Footer / Buttons Area - Fixed at bottom with safe padding */}
+      <div className="w-full p-6 pb-8 pt-4 bg-gradient-to-t from-black/80 to-transparent flex-shrink-0 z-20 flex flex-col gap-4">
+        <div className="flex justify-center gap-2 mb-2">
             {slides.map((_, i) => (
                 <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === idx ? 'w-8 bg-white' : 'w-2 bg-white/30'}`} />
             ))}
@@ -169,9 +169,6 @@ const App = () => {
                 // Streak Broken (unless new user/first time logic handled elsewhere)
                 // If last login wasn't yesterday, reset to 1 (for today)
                 savedUser.streak = 1;
-                // Clear history if broken? Or keep last 7 days visual? 
-                // Let's reset visual history for simplicity in this MVP logic or just append
-                // If broken, previous days become inactive in our tracking window
             }
             
             savedUser.lastLoginDate = new Date().toISOString();
@@ -243,7 +240,6 @@ const App = () => {
           if (newXp >= prev.maxXp) {
               newLevel += 1;
               newXp = newXp - prev.maxXp;
-              // alert(`Level Up! You are now Level ${newLevel}`); // Removed native alert for smoother feel
           }
           return { ...prev, xp: newXp, level: newLevel };
       });
@@ -334,7 +330,12 @@ const App = () => {
 
   return (
     <LiquidBackground>
-      <main className="flex-1 relative z-10 w-full h-full max-w-md mx-auto shadow-2xl overflow-hidden sm:rounded-[3rem] sm:my-8 sm:h-[90vh] sm:border-[8px] sm:border-gray-900 bg-sasambo-red/10">
+      {/* 
+        Use h-[100dvh] (Dynamic Viewport Height) for mobile to correctly handle 
+        browser address bars/toolbars. 
+        sm:h-[90vh] keeps the card look on desktops.
+      */}
+      <main className="relative z-10 w-full h-[100dvh] sm:h-[90vh] max-w-md mx-auto shadow-2xl overflow-hidden sm:rounded-[3rem] sm:my-8 sm:border-[8px] sm:border-gray-900 bg-sasambo-red/10 flex flex-col">
         <AnimatePresence mode="wait">
           <motion.div
             key={screen}
@@ -342,13 +343,13 @@ const App = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="w-full h-full"
+            className="w-full h-full flex flex-col"
           >
             {renderScreen()}
           </motion.div>
         </AnimatePresence>
         
-        {/* Navigation is hidden for TANYA_DATU and COMMUNITY_CHAT because they are not in the check list */}
+        {/* Navigation is hidden for full screen modes */}
         {!isFullScreen && 
          screen !== ScreenState.TANYA_DATU && 
          screen !== ScreenState.COMMUNITY_CHAT && 

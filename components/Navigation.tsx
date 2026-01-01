@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Home, Gamepad2, BookOpen, Trophy, User } from 'lucide-react';
 import { ScreenState } from '../types';
@@ -27,11 +28,11 @@ const Navigation: React.FC<NavigationProps> = ({ currentScreen, onNavigate }) =>
   ];
 
   return (
-    <div className="absolute bottom-0 left-0 w-full p-4 z-50">
+    <div className="absolute bottom-4 left-0 w-full p-4 z-50">
       <motion.div 
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="bg-black/20 backdrop-blur-2xl border border-white/10 rounded-full px-6 py-4 flex justify-between items-center shadow-2xl"
+        className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-full px-6 py-4 flex justify-between items-center shadow-2xl max-w-[340px] mx-auto"
       >
         {items.map((item) => {
           const isActive = currentScreen === item.id;

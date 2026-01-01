@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, CheckCircle2, Grid, Music, Book, Play, Lock, Star, Search, Check, XCircle, Sparkles, Compass, GripHorizontal, X, Heart, ThumbsUp, ThumbsDown, Zap, Crown } from 'lucide-react';
@@ -196,26 +195,28 @@ const MisteriSasamboLevel: React.FC<{ item: any, onWin: (won: boolean) => void }
     };
 
     return (
-        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-y-auto pb-20 no-scrollbar">
-            <div className="flex-1 relative mb-6 flex flex-col items-center justify-center min-h-[200px]">
-                <AnimatePresence mode="wait">
-                    <motion.div key={currentClueIdx} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full">
-                        <GlassCard className="p-6 min-h-[200px] flex flex-col items-center justify-center text-center border-2 border-yellow-500/30 bg-[#3E2723]/90 relative overflow-hidden">
-                            <span className="text-xs text-yellow-500 uppercase font-bold mb-4 tracking-widest bg-black/20 px-3 py-1 rounded-full">Petunjuk {currentClueIdx + 1} / 3</span>
-                            <h2 className="text-xl font-bold text-white leading-relaxed font-serif italic">"{item.clues[currentClueIdx]}"</h2>
-                        </GlassCard>
-                    </motion.div>
-                </AnimatePresence>
-                {currentClueIdx < 2 && (
-                    <button onClick={() => setCurrentClueIdx(p => p+1)} className="mt-4 text-[#D4A373] text-sm font-bold flex items-center gap-1 animate-pulse">Buka Petunjuk <ChevronLeft className="-rotate-90" size={14}/></button>
-                )}
-            </div>
-            <div className="grid grid-cols-2 gap-3 pb-6 mt-auto flex-shrink-0">
-                {item.options.map((opt: string, i: number) => (
-                    <button key={i} onClick={() => handleGuess(opt)} className="p-4 rounded-xl bg-[#4E342E] border-2 border-[#8B5E3C] text-white font-bold text-sm shadow-lg active:scale-95 transition-all">
-                        {opt}
-                    </button>
-                ))}
+        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-hidden">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                <div className="relative mb-6 flex flex-col items-center justify-center min-h-[200px]">
+                    <AnimatePresence mode="wait">
+                        <motion.div key={currentClueIdx} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full">
+                            <GlassCard className="p-6 min-h-[200px] flex flex-col items-center justify-center text-center border-2 border-yellow-500/30 bg-[#3E2723]/90 relative overflow-hidden">
+                                <span className="text-xs text-yellow-500 uppercase font-bold mb-4 tracking-widest bg-black/20 px-3 py-1 rounded-full">Petunjuk {currentClueIdx + 1} / 3</span>
+                                <h2 className="text-xl font-bold text-white leading-relaxed font-serif italic">"{item.clues[currentClueIdx]}"</h2>
+                            </GlassCard>
+                        </motion.div>
+                    </AnimatePresence>
+                    {currentClueIdx < 2 && (
+                        <button onClick={() => setCurrentClueIdx(p => p+1)} className="mt-4 text-[#D4A373] text-sm font-bold flex items-center gap-1 animate-pulse">Buka Petunjuk <ChevronLeft className="-rotate-90" size={14}/></button>
+                    )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 pb-6">
+                    {item.options.map((opt: string, i: number) => (
+                        <button key={i} onClick={() => handleGuess(opt)} className="p-4 rounded-xl bg-[#4E342E] border-2 border-[#8B5E3C] text-white font-bold text-sm shadow-lg active:scale-95 transition-all">
+                            {opt}
+                        </button>
+                    ))}
+                </div>
             </div>
             <AnimatePresence>
                 {showResult && <ResultModal status={showResult} message={showResult === 'wrong' ? `Jawabannya: ${item.target}` : undefined} onNext={handleNext} />}
@@ -241,16 +242,16 @@ const PantunHypeLevel: React.FC<{ item: any, onWin: (won: boolean) => void }> = 
         onWin(won);
     };
     return (
-        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-y-auto pb-20 no-scrollbar">
-            <div className="flex-1 flex flex-col items-center justify-start gap-4">
-                <GlassCard className="w-full p-6 text-center border-purple-400/30 bg-purple-900/40 relative overflow-hidden">
+        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-hidden">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-6 flex flex-col gap-4">
+                <GlassCard className="w-full p-6 text-center border-purple-400/30 bg-purple-900/40 relative overflow-hidden flex-shrink-0">
                     <p className="text-pink-200 text-xs uppercase tracking-widest font-bold mb-3">Sampiran ({item.culture})</p>
                     <div className="space-y-2">
                         <p className="text-lg text-white font-serif italic">"{item.sampiran[0]}"</p>
                         <p className="text-lg text-white font-serif italic">"{item.sampiran[1]}"</p>
                     </div>
                 </GlassCard>
-                <div className="w-full flex flex-col gap-3 pb-6">
+                <div className="w-full flex flex-col gap-3">
                     {item.options.map((opt: any, idx: number) => (
                         <motion.button
                             key={idx}
@@ -299,14 +300,14 @@ const TakdirBebasLevel: React.FC<{ item: any, onWin: (won: boolean) => void }> =
         onWin(won);
     };
     return (
-        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-y-auto pb-20 no-scrollbar">
-            <div className="flex-1 flex flex-col items-center z-10">
-                <GlassCard className="p-6 mb-6 bg-indigo-900/60 border-indigo-400/30">
+        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-hidden">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-6 flex flex-col items-center">
+                <GlassCard className="p-6 mb-6 bg-indigo-900/60 border-indigo-400/30 flex-shrink-0 w-full">
                     <h2 className="text-xl font-bold text-white mb-4 leading-relaxed">"{item.context}"</h2>
                     <p className="text-indigo-200 text-sm italic mb-2">Pertanyaan:</p>
                     <p className="text-white font-medium">{item.question}</p>
                 </GlassCard>
-                <div className="flex flex-col gap-3 pb-8 w-full">
+                <div className="flex flex-col gap-3 w-full">
                     {item.options.map((opt: any, i: number) => (
                         <motion.button 
                             key={i}
@@ -620,29 +621,39 @@ const PasarKataLevel: React.FC<{ item: PasarKataQuestion, onWin: (won: boolean) 
     };
 
     return (
-        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-y-auto pb-20 no-scrollbar">
-             <EarthyContainer className="mb-4 text-center border-[#D4A373]/30 flex-shrink-0">
-                <p className="text-[#D4A373] text-xs mb-2 uppercase tracking-widest font-bold">Susun Kalimat</p>
-                <h2 className="text-xl font-display font-bold text-[#FEFAE0] italic tracking-wide">"{item.translation}"</h2>
-            </EarthyContainer>
-             <div className="bg-[#2C1810]/40 rounded-2xl border-2 border-dashed border-[#8B5E3C]/30 p-4 mb-6 min-h-[140px] relative flex-shrink-0">
-                {selectedWords.length === 0 && (<div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm italic pointer-events-none text-center p-4">Ketuk kata di bawah untuk menambahkan.</div>)}
-                <Reorder.Group axis="y" values={selectedWords} onReorder={setSelectedWords} className="flex flex-wrap gap-2">
-                    {selectedWords.map((word) => (
-                        <Reorder.Item key={word} value={word}>
-                            <motion.div layout onClick={() => removeFromSentence(word)} className="px-3 py-2 bg-[#FEFAE0] text-[#2C1810] rounded-xl font-bold shadow-md border-b-4 border-[#D4A373] flex items-center justify-between gap-2 cursor-pointer text-sm">
-                                <span>{word}</span><X size={12} className="text-red-500" />
-                            </motion.div>
-                        </Reorder.Item>
+        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-hidden">
+             {/* Content Scroll Area */}
+             <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                <EarthyContainer className="mb-4 text-center border-[#D4A373]/30">
+                    <p className="text-[#D4A373] text-xs mb-2 uppercase tracking-widest font-bold">Susun Kalimat</p>
+                    <h2 className="text-xl font-display font-bold text-[#FEFAE0] italic tracking-wide">"{item.translation}"</h2>
+                </EarthyContainer>
+                
+                <div className="bg-[#2C1810]/40 rounded-2xl border-2 border-dashed border-[#8B5E3C]/30 p-4 mb-6 min-h-[140px] relative">
+                    {selectedWords.length === 0 && (<div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm italic pointer-events-none text-center p-4">Ketuk kata di bawah untuk menambahkan.</div>)}
+                    <Reorder.Group axis="y" values={selectedWords} onReorder={setSelectedWords} className="flex flex-wrap gap-2">
+                        {selectedWords.map((word) => (
+                            <Reorder.Item key={word} value={word}>
+                                <motion.div layout onClick={() => removeFromSentence(word)} className="px-3 py-2 bg-[#FEFAE0] text-[#2C1810] rounded-xl font-bold shadow-md border-b-4 border-[#D4A373] flex items-center justify-between gap-2 cursor-pointer text-sm">
+                                    <span>{word}</span><X size={12} className="text-red-500" />
+                                </motion.div>
+                            </Reorder.Item>
+                        ))}
+                    </Reorder.Group>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-center mb-4">
+                    {availableWords.map((w, i) => (
+                        <motion.button layoutId={`word-${w}-${i}`} key={`avail-${i}`} onClick={() => addToSentence(w, i)} className="px-3 py-2 bg-[#5D4037] text-[#FEFAE0] border border-[#8B5E3C] rounded-xl font-bold text-sm shadow-lg active:scale-95">{w}</motion.button>
                     ))}
-                </Reorder.Group>
+                </div>
+             </div>
+
+            {/* Bottom Button Fixed Area */}
+            <div className="mt-auto pb-4 pt-2 flex-shrink-0 z-10">
+                <LiquidButton onClick={check} disabled={availableWords.length > 0} fullWidth className={availableWords.length > 0 ? 'opacity-50 grayscale' : ''}><Check size={20} /> Cek Jawaban</LiquidButton>
             </div>
-             <div className="flex flex-wrap gap-2 justify-center mb-8 flex-shrink-0">
-                {availableWords.map((w, i) => (
-                    <motion.button layoutId={`word-${w}-${i}`} key={`avail-${i}`} onClick={() => addToSentence(w, i)} className="px-3 py-2 bg-[#5D4037] text-[#FEFAE0] border border-[#8B5E3C] rounded-xl font-bold text-sm shadow-lg active:scale-95">{w}</motion.button>
-                ))}
-            </div>
-            <div className="mt-auto pb-4"><LiquidButton onClick={check} disabled={availableWords.length > 0} fullWidth className={availableWords.length > 0 ? 'opacity-50 grayscale' : ''}><Check size={20} /> Cek Jawaban</LiquidButton></div>
+
             <AnimatePresence>{showResult && <ResultModal status={showResult} message={showResult === 'wrong' ? `Jawabannya: "${item.target}"` : undefined} onNext={handleNext} />}</AnimatePresence>
         </div>
     )
@@ -656,17 +667,19 @@ const TebakBahasaLevel: React.FC<{ item: TebakBahasaQuestion, onWin: (won: boole
     };
     const handleNext = () => { const won = showResult === 'correct'; setShowResult(null); onWin(won); };
     return (
-        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-y-auto pb-20 no-scrollbar">
-             <EarthyContainer className="mb-4 text-center border-[#D4A373]/30 flex-shrink-0">
-                <p className="text-[#D4A373] text-xs mb-2 uppercase tracking-widest font-bold">Kuis Kosakata</p>
-                <h2 className="text-xl font-display font-bold text-[#FEFAE0] italic tracking-wide">{item.question}</h2>
-            </EarthyContainer>
-             <div className="grid gap-3 flex-shrink-0">
-                {item.options.map((opt, i) => (
-                    <motion.button key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} onClick={() => handleAnswer(opt)} className="p-4 bg-[#4E342E] text-[#FEFAE0] border border-[#8B5E3C] rounded-xl font-bold text-sm shadow-lg active:scale-95 text-left flex items-center justify-between hover:bg-[#5D4037]">
-                        {opt}<div className="w-6 h-6 rounded-full border border-[#FEFAE0]/30 flex items-center justify-center text-xs opacity-50">{String.fromCharCode(65+i)}</div>
-                    </motion.button>
-                ))}
+        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-hidden">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                <EarthyContainer className="mb-4 text-center border-[#D4A373]/30">
+                    <p className="text-[#D4A373] text-xs mb-2 uppercase tracking-widest font-bold">Kuis Kosakata</p>
+                    <h2 className="text-xl font-display font-bold text-[#FEFAE0] italic tracking-wide">{item.question}</h2>
+                </EarthyContainer>
+                <div className="grid gap-3">
+                    {item.options.map((opt, i) => (
+                        <motion.button key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} onClick={() => handleAnswer(opt)} className="p-4 bg-[#4E342E] text-[#FEFAE0] border border-[#8B5E3C] rounded-xl font-bold text-sm shadow-lg active:scale-95 text-left flex items-center justify-between hover:bg-[#5D4037]">
+                            {opt}<div className="w-6 h-6 rounded-full border border-[#FEFAE0]/30 flex items-center justify-center text-xs opacity-50">{String.fromCharCode(65+i)}</div>
+                        </motion.button>
+                    ))}
+                </div>
             </div>
             <AnimatePresence>{showResult && <ResultModal status={showResult} message={showResult === 'wrong' ? `Jawaban: ${item.correctAnswer}` : undefined} onNext={handleNext} />}</AnimatePresence>
         </div>
@@ -681,16 +694,18 @@ const LegendaLevel: React.FC<{ item: LegendaQuestion, onWin: (won: boolean) => v
     };
     const handleNext = () => { const won = showResult === 'correct'; setShowResult(null); onWin(won); };
     return (
-        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-y-auto pb-20 no-scrollbar">
-             <EarthyContainer className="mb-4 text-center border-[#D4A373]/30 flex-shrink-0">
-                <p className="text-[#D4A373] text-xs mb-2 uppercase tracking-widest font-bold">Legenda & Budaya</p>
-                {item.story && <p className="text-white/60 text-xs italic mb-3">"{item.story}"</p>}
-                <h2 className="text-lg font-bold text-[#FEFAE0]">{item.question}</h2>
-            </EarthyContainer>
-             <div className="grid gap-3 flex-shrink-0">
-                {item.options.map((opt, i) => (
-                    <motion.button key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} onClick={() => handleAnswer(opt)} className="p-4 bg-[#2C1810] text-[#FEFAE0] border border-[#8B5E3C] rounded-xl font-bold text-sm shadow-lg active:scale-95 text-left hover:bg-[#3E2723]">{opt}</motion.button>
-                ))}
+        <div className="flex flex-col h-full w-full max-w-md mx-auto relative overflow-hidden">
+            <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
+                <EarthyContainer className="mb-4 text-center border-[#D4A373]/30">
+                    <p className="text-[#D4A373] text-xs mb-2 uppercase tracking-widest font-bold">Legenda & Budaya</p>
+                    {item.story && <p className="text-white/60 text-xs italic mb-3">"{item.story}"</p>}
+                    <h2 className="text-lg font-bold text-[#FEFAE0]">{item.question}</h2>
+                </EarthyContainer>
+                <div className="grid gap-3">
+                    {item.options.map((opt, i) => (
+                        <motion.button key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} onClick={() => handleAnswer(opt)} className="p-4 bg-[#2C1810] text-[#FEFAE0] border border-[#8B5E3C] rounded-xl font-bold text-sm shadow-lg active:scale-95 text-left hover:bg-[#3E2723]">{opt}</motion.button>
+                    ))}
+                </div>
             </div>
             <AnimatePresence>{showResult && <ResultModal status={showResult} message={showResult === 'wrong' ? `Jawaban: ${item.correctAnswer}` : undefined} onNext={handleNext} />}</AnimatePresence>
         </div>
@@ -819,14 +834,14 @@ const GameEngine = <T,>({ title, maxUnlocked, levelsData, onExit, actions, gameK
                 <motion.div animate={{ width: `${((currentQuestionIdx) / levelsData[currentLevelIdx].length) * 100}%` }} className="h-full bg-gradient-to-r from-[#8B5E3C] to-[#D4A373]" />
             </div>
             
-            <div className="flex-1 z-10 relative overflow-y-auto pb-20 no-scrollbar">
+            <div className="flex-1 z-10 relative overflow-y-auto no-scrollbar flex flex-col">
                 <AnimatePresence mode="wait">
                     <motion.div 
                         key={currentQuestionIdx} 
                         initial={{ opacity: 0, x: 20 }} 
                         animate={{ opacity: 1, x: 0 }} 
                         exit={{ opacity: 0, x: -20 }}
-                        className="h-full"
+                        className="h-full flex flex-col"
                     >
                         {renderContent(levelsData[currentLevelIdx][currentQuestionIdx], handleLevelNext)}
                     </motion.div>
@@ -840,11 +855,11 @@ const GameEngine = <T,>({ title, maxUnlocked, levelsData, onExit, actions, gameK
 const LanguageSelector: React.FC<{ onSelect: (l: Language) => void, onBack: () => void }> = ({ onSelect, onBack }) => {
     return (
         <div className="h-full flex flex-col p-6 pt-12 relative overflow-hidden">
-            <div className="flex items-center gap-4 mb-8 z-10">
+            <div className="flex items-center gap-4 mb-8 z-10 flex-shrink-0">
                 <button onClick={onBack} className="p-2 rounded-full bg-[#5D4037] border border-[#8B5E3C]"><ChevronLeft className="text-[#FEFAE0]" /></button>
                 <h1 className="text-2xl font-display font-bold text-[#FEFAE0]">Pilih Bahasa</h1>
             </div>
-            <div className="grid gap-4 z-10">
+            <div className="grid gap-4 z-10 flex-1 overflow-y-auto no-scrollbar">
                 {[Language.SASAK, Language.SAMAWA, Language.MBOJO].map((lang, i) => (
                     <motion.button 
                         key={lang}
@@ -852,7 +867,7 @@ const LanguageSelector: React.FC<{ onSelect: (l: Language) => void, onBack: () =
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         onClick={() => onSelect(lang)}
-                        className={`p-6 rounded-3xl border-2 text-left relative overflow-hidden group shadow-xl
+                        className={`p-6 rounded-3xl border-2 text-left relative overflow-hidden group shadow-xl flex-shrink-0
                             ${lang === Language.SASAK ? 'bg-gradient-to-r from-red-900/80 to-red-800/80 border-red-500/30' : 
                               lang === Language.SAMAWA ? 'bg-gradient-to-r from-blue-900/80 to-blue-800/80 border-blue-500/30' : 
                               'bg-gradient-to-r from-purple-900/80 to-purple-800/80 border-purple-500/30'}`

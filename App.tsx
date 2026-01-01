@@ -27,7 +27,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   }, [onComplete]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center z-50 p-6 relative">
+    <div className="flex flex-col items-center justify-center h-full text-center z-50 p-6 relative overflow-hidden">
       {/* Decorative Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-amber-500/20 blur-[100px] rounded-full pointer-events-none"></div>
 
@@ -38,7 +38,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         className="relative z-10"
       >
         {/* Frame / Container Logo - INCREASED SIZE, REMOVED PADDING */}
-        <div className="w-64 h-64 mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-2xl flex items-center justify-center p-0 mb-8 relative overflow-hidden group">
+        <div className="w-48 h-48 sm:w-64 sm:h-64 mx-auto bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2.5rem] shadow-2xl flex items-center justify-center p-0 mb-8 relative overflow-hidden group">
             {/* Inner Shine Effect */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
             
@@ -91,19 +91,20 @@ const Onboarding = ({ onComplete }: { onComplete: () => void }) => {
   };
 
   return (
-    <div className="h-full flex flex-col justify-between p-8 pt-20">
-      <div className="flex-1 flex items-center justify-center">
+    <div className="h-full flex flex-col justify-between relative overflow-hidden">
+      {/* Content Area - Scrollable if content is too tall */}
+      <div className="flex-1 overflow-y-auto px-6 pt-10 pb-4 flex flex-col items-center justify-center min-h-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={idx}
-            initial={{ x: 100, opacity: 0 }}
+            initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -100, opacity: 0 }}
-            className="text-center w-full"
+            exit={{ x: -50, opacity: 0 }}
+            className="text-center w-full flex flex-col items-center"
           >
-            {/* Conditional Rendering: Image Frame vs Emoji */}
+            {/* Conditional Rendering: Image Frame vs Emoji - Responsive Sizing */}
             {slides[idx].image ? (
-               <div className="w-56 h-56 mx-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-2xl flex items-center justify-center p-6 mb-8 relative overflow-hidden group">
+               <div className="w-48 h-48 sm:w-64 sm:h-64 mx-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-2xl flex items-center justify-center p-4 mb-6 relative overflow-hidden group flex-shrink-0">
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
                   <img 
                     src={slides[idx].image} 
@@ -112,18 +113,20 @@ const Onboarding = ({ onComplete }: { onComplete: () => void }) => {
                   />
                </div>
             ) : (
-               <div className="text-9xl mb-8 filter drop-shadow-2xl animate-float">{slides[idx].emoji}</div>
+               <div className="text-8xl sm:text-9xl mb-8 filter drop-shadow-2xl animate-float">{slides[idx].emoji}</div>
             )}
 
-            <h2 className="text-3xl font-display font-bold text-white mb-4">{slides[idx].title}</h2>
-            <p className="text-white/70 leading-relaxed text-lg">{slides[idx].desc}</p>
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-white mb-3 leading-tight">{slides[idx].title}</h2>
+            <p className="text-white/70 leading-relaxed text-sm sm:text-lg max-w-xs">{slides[idx].desc}</p>
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className="flex flex-col gap-6">
+
+      {/* Footer / Buttons Area - Fixed at bottom */}
+      <div className="w-full p-6 pt-0 bg-transparent flex-shrink-0 z-10 flex flex-col gap-5">
         <div className="flex justify-center gap-2">
             {slides.map((_, i) => (
-                <div key={i} className={`h-2 rounded-full transition-all duration-300 ${i === idx ? 'w-8 bg-white' : 'w-2 bg-white/30'}`} />
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === idx ? 'w-8 bg-white' : 'w-2 bg-white/30'}`} />
             ))}
         </div>
         <LiquidButton onClick={next} fullWidth>

@@ -373,25 +373,25 @@ const AccentTrainingLevel: React.FC<{ level: LevelData, language: Language, onCl
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: theme.pattern, backgroundSize: '30px 30px' }} />
 
       {/* Top Bar */}
-      <div className="p-4 flex justify-between items-center bg-black/20 z-10 relative">
+      <div className="p-4 flex justify-between items-center bg-black/20 z-10 relative flex-shrink-0">
          <div className="text-white text-xs font-bold uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full border border-white/20">Level {level.id}</div>
          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-red-500/50 transition-colors"><X className="text-white" size={16} /></button>
       </div>
 
       <div className="flex-1 flex flex-col items-center p-6 relative z-10 overflow-y-auto">
           
-          {/* VISUALIZER CIRCLE */}
-          <div className="mt-4 mb-6 relative">
-              <div className="w-64 h-64 rounded-full border-4 border-white/10 flex items-center justify-center relative bg-gradient-to-br from-black/40 to-black/80 shadow-2xl backdrop-blur-md">
+          {/* VISUALIZER CIRCLE - Mobile Friendly Sizing */}
+          <div className="mt-2 mb-4 relative flex-shrink-0">
+              <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-full border-4 border-white/10 flex items-center justify-center relative bg-gradient-to-br from-black/40 to-black/80 shadow-2xl backdrop-blur-md transition-all">
                    {/* Ripple Animation when speaking */}
                    {isSpeaking && (
                        <div className="absolute inset-0 rounded-full border-4 border-yellow-500/50 animate-ping"></div>
                    )}
                    
                    <div className="text-center z-10 px-4">
-                       <p className="text-yellow-400 text-[10px] font-bold uppercase tracking-widest mb-2">Target Suara</p>
-                       <h1 className="text-3xl font-display font-bold text-white mb-2 leading-tight">{targetWord}</h1>
-                       <p className="text-white/50 text-sm italic border-t border-white/10 pt-2 mt-2">"{translation}"</p>
+                       <p className="text-yellow-400 text-[10px] font-bold uppercase tracking-widest mb-1">Target Suara</p>
+                       <h1 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2 leading-tight">{targetWord}</h1>
+                       <p className="text-white/50 text-xs sm:text-sm italic border-t border-white/10 pt-2 mt-1">"{translation}"</p>
                    </div>
               </div>
               
@@ -405,7 +405,7 @@ const AccentTrainingLevel: React.FC<{ level: LevelData, language: Language, onCl
           </div>
 
           {/* PHONEME FOCUS TIP */}
-          <GlassCard className="mb-6 w-full py-3 px-4 flex items-center gap-3 bg-white/5 border-white/10">
+          <GlassCard className="mb-4 w-full py-3 px-4 flex items-center gap-3 bg-white/5 border-white/10 flex-shrink-0">
               <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
                   <Headphones size={20} className="text-blue-300" />
               </div>
@@ -415,7 +415,7 @@ const AccentTrainingLevel: React.FC<{ level: LevelData, language: Language, onCl
               </div>
           </GlassCard>
 
-          {/* ACTION AREA & FEEDBACK */}
+          {/* ACTION AREA & FEEDBACK - Sticky Bottom or Flow */}
           <div className="w-full mt-auto mb-4">
               {score !== null ? (
                   <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center bg-black/40 p-6 rounded-3xl border border-white/10">
